@@ -1,0 +1,17 @@
+{
+  "name": "nexus",
+  "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --if-present run dev",
+    "dev:api": "pnpm --filter @nexus/api start:dev",
+    "dev:web": "pnpm --filter @nexus/web dev",
+    "dev:app": "pnpm --filter @nexus/app start",
+    "build": "pnpm -r --if-present run build",
+    "lint": "pnpm -r --if-present run lint",
+    "test": "pnpm -r --if-present run test"
+  }
+}
