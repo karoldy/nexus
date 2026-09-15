@@ -1,16 +1,6 @@
-import { http, type ApiEnvelope, withToken } from '@/config/axios.config';
+import type { ApiEnvelope, MePayload } from '@/types';
+import { http, withToken } from '@/config/axios.config';
 import { paths } from '@/routers/paths';
-
-export type AuthUser = {
-  id: string;
-  email: string;
-  name: string;
-};
-
-export type MePayload = {
-  user: AuthUser;
-  permissionCodes: string[];
-};
 
 function sessionTokenFromHeaders(headers: Record<string, unknown>): string {
   const token = headers['set-auth-token'];
@@ -21,17 +11,17 @@ function sessionTokenFromHeaders(headers: Record<string, unknown>): string {
 }
 
 export async function signInEmail(email: string, password: string): Promise<string> {
-  const response = await http.post('/api/auth/sign-in/email', { email, password });
+  const response = await http.post('/auth/sign-in/email', { email, password });
   return sessionTokenFromHeaders(response.headers as Record<string, unknown>);
 }
 
 export async function signUpEmail(name: string, email: string, password: string): Promise<string> {
-  const response = await http.post('/api/auth/sign-up/email', { name, email, password });
+  const response = await http.post('/auth/sign-up/email', { name, email, password });
   return sessionTokenFromHeaders(response.headers as Record<string, unknown>);
 }
 
 export async function fetchAccessToken(sessionToken: string): Promise<string> {
-  const response = await http.get<{ token?: string }>('/api/auth/token', withToken(sessionToken));
+  const response = await http.get<{ token?: string }>('/auth/token', withToken(sessionToken));
   if (!response.data.token) {
     throw new Error('未返回 access token');
   }
@@ -39,7 +29,7 @@ export async function fetchAccessToken(sessionToken: string): Promise<string> {
 }
 
 export async function fetchMe(accessToken: string): Promise<MePayload> {
-  const response = await http.get<ApiEnvelope<MePayload>>('/api/me', withToken(accessToken));
+  const response = await http.get<ApiEnvelope<MePayload>>('/me', withToken(accessToken));
   if (!response.data.data) {
     throw new Error('未返回用户信息');
   }
@@ -47,14 +37,14 @@ export async function fetchMe(accessToken: string): Promise<MePayload> {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  await http.post('/api/auth/request-password-reset', {
+  await http.post('/auth/request-password-reset', {
     email,
     redirectTo: `${window.location.origin}${paths.resetPassword}`,
   });
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
-  await http.post('/api/auth/reset-password', { token, newPassword });
+  await http.post('/auth/reset-password', { token, newPassword });
 }
 
 export async function changePassword(
@@ -63,7 +53,7 @@ export async function changePassword(
   newPassword: string,
 ): Promise<void> {
   await http.post(
-    '/api/auth/change-password',
+    '/auth/change-password',
     {
       currentPassword,
       newPassword,
@@ -77,7 +67,7 @@ export async function signOut(sessionToken: string | null): Promise<void> {
   if (!sessionToken) {
     return;
   }
-  await http.post('/api/auth/sign-out', undefined, withToken(sessionToken));
+  await http.post('/auth/sign-out', undefined, withToken(sessionToken));
 }
 
 export function isJwtExpired(token: string, skewMs = 30_000): boolean {

@@ -1,15 +1,5 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
-
-export type ApiEnvelope<T> = {
-  data?: T;
-  requestId?: string;
-  success?: boolean;
-  errorCode?: string;
-  errorInfo?: string;
-  timestamp?: string;
-  code?: number;
-  message?: string;
-};
+import type { ApiEnvelope } from '@/types';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -30,6 +20,7 @@ function errorMessage(data: unknown, fallback: string): string {
 }
 
 export const http = axios.create({
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },

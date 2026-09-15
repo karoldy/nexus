@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -16,13 +16,22 @@ import {
 } from '@/apis';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldError } from '@/components/ui/field-error';
-import { Select, Textarea } from '@/components/ui/form-controls';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldError, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { WorkspaceShell } from '@/components/workspace-shell';
 import { useKnowledgePermissions } from '@/hooks/use-knowledge-permissions';
 import { paths } from '@/routers/paths';
+
+const NONE_CATEGORY = 'none';
 
 type Values = {
   title: string;
@@ -58,7 +67,7 @@ export function KnowledgeFormPage() {
       title: '',
       summary: '',
       body: '',
-      categoryId: '',
+      categoryId: NONE_CATEGORY,
       published: false,
       tagIds: [],
     },
@@ -83,7 +92,7 @@ export function KnowledgeFormPage() {
       title: existing.data.title,
       summary: existing.data.summary ?? '',
       body: existing.data.body ?? '',
-      categoryId: existing.data.categoryId ?? '',
+      categoryId: existing.data.categoryId ?? NONE_CATEGORY,
       published: existing.data.published,
       tagIds: existing.data.tags.map((tag) => tag.id),
     });
@@ -109,7 +118,7 @@ export function KnowledgeFormPage() {
                   title: values.title,
                   summary: values.summary || null,
                   body: values.body || null,
-                  categoryId: values.categoryId || null,
+                  categoryId: values.categoryId === NONE_CATEGORY ? null : values.categoryId,
                   published: values.published,
                   tagIds: values.tagIds,
                 };
@@ -126,52 +135,104 @@ export function KnowledgeFormPage() {
               }
             })}
           >
-            <div className="space-y-2">
-              <Label htmlFor="title">{t('knowledge.titleField')}</Label>
+            <Field>
+              <FieldLabel htmlFor="title">{t('knowledge.titleField')}</FieldLabel>
               <Input id="title" {...form.register('title')} disabled={!canSubmit} />
-              {form.formState.errors.title ? (
-                <FieldError>{form.formState.errors.title.message}</FieldError>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="summary">{t('knowledge.summary')}</Label>
+              <FieldError>{form.formState.errors.title?.message}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="summary">{t('knowledge.summary')}</FieldLabel>
               <Textarea id="summary" {...form.register('summary')} disabled={!canSubmit} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="body">{t('knowledge.body')}</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="body">{t('knowledge.body')}</FieldLabel>
               <Textarea id="body" {...form.register('body')} disabled={!canSubmit} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">{t('knowledge.category')}</Label>
-              <Select id="categoryId" {...form.register('categoryId')} disabled={!canSubmit}>
-                <option value="">{t('common.none')}</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {'—'.repeat(category.depth)} {category.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" {...form.register('published')} disabled={!canSubmit} />
-              {t('knowledge.publishedYes')}
-            </label>
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">{t('nav.tags')}</legend>
-              <div className="flex flex-wrap gap-3">
-                {(tags.data?.records ?? []).map((tag) => (
-                  <label key={tag.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      value={tag.id}
-                      {...form.register('tagIds')}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="categoryId">{t('knowledge.category')}</FieldLabel>
+              <Controller
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => {
+                  const options = [
+                    { value: NONE_CATEGORY, label: t('common.none') },
+                    ...categories.map((category) => ({
+                      value: category.id,
+                      label: `${'—'.repeat(category.depth)} ${category.name}`,
+                    })),
+                  ];
+                  return (
+                    <Select
+                      items={options}
+                      value={field.value}
                       disabled={!canSubmit}
-                    />
-                    {tag.name}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+                      onValueChange={(value) => {
+                        if (typeof value === 'string') {
+                          field.onChange(value);
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="categoryId" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {options.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
+              />
+            </Field>
+            <Controller
+              control={form.control}
+              name="published"
+              render={({ field }) => (
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="published"
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(checked === true)}
+                    disabled={!canSubmit}
+                  />
+                  <FieldLabel htmlFor="published">{t('knowledge.publishedYes')}</FieldLabel>
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="tagIds"
+              render={({ field }) => (
+                <FieldSet>
+                  <FieldLegend>{t('nav.tags')}</FieldLegend>
+                  <div className="flex flex-wrap gap-3">
+                    {(tags.data?.records ?? []).map((tag) => {
+                      const checked = field.value.includes(tag.id);
+                      return (
+                        <Field key={tag.id} orientation="horizontal" className="w-auto">
+                          <Checkbox
+                            id={`tag-${tag.id}`}
+                            checked={checked}
+                            disabled={!canSubmit}
+                            onCheckedChange={(next) => {
+                              field.onChange(
+                                next === true
+                                  ? [...field.value, tag.id]
+                                  : field.value.filter((value) => value !== tag.id),
+                              );
+                            }}
+                          />
+                          <FieldLabel htmlFor={`tag-${tag.id}`}>{tag.name}</FieldLabel>
+                        </Field>
+                      );
+                    })}
+                  </div>
+                </FieldSet>
+              )}
+            />
             <div className="flex gap-2">
               {canSubmit ? (
                 <Button type="submit" disabled={form.formState.isSubmitting}>

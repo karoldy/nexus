@@ -7,9 +7,8 @@ import { z } from 'zod';
 import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldError } from '@/components/ui/field-error';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { paths } from '@/routers/paths';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -55,32 +54,26 @@ export function RegisterPage() {
               }
             })}
           >
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('common.name')}</Label>
+            <Field>
+              <FieldLabel htmlFor="name">{t('common.name')}</FieldLabel>
               <Input id="name" autoComplete="name" {...form.register('name')} />
-              {form.formState.errors.name ? (
-                <FieldError>{form.formState.errors.name.message}</FieldError>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('common.email')}</Label>
+              <FieldError>{form.formState.errors.name?.message}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="email">{t('common.email')}</FieldLabel>
               <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
-              {form.formState.errors.email ? (
-                <FieldError>{form.formState.errors.email.message}</FieldError>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('common.password')}</Label>
+              <FieldError>{form.formState.errors.email?.message}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="password">{t('common.password')}</FieldLabel>
               <Input
                 id="password"
                 type="password"
                 autoComplete="new-password"
                 {...form.register('password')}
               />
-              {form.formState.errors.password ? (
-                <FieldError>{form.formState.errors.password.message}</FieldError>
-              ) : null}
-            </div>
+              <FieldError>{form.formState.errors.password?.message}</FieldError>
+            </Field>
             <Button className="w-full" type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? t('auth.registering') : t('auth.registerSubmit')}
             </Button>

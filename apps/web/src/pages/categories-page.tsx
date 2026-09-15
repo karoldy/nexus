@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,14 +12,22 @@ import {
   flattenCategoryTree,
   updateCategory,
 } from '@/apis';
+import { ConfirmDeleteButton } from '@/components/confirm-delete-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldError } from '@/components/ui/field-error';
-import { Select } from '@/components/ui/form-controls';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { WorkspaceShell } from '@/components/workspace-shell';
 import { useKnowledgePermissions } from '@/hooks/use-knowledge-permissions';
+
+const ROOT_PARENT = 'root';
 
 type Values = {
   name: string;
@@ -36,7 +44,7 @@ export function CategoriesPage() {
   const rows = flattenCategoryTree(tree.data ?? []);
 
   const form = useForm<Values>({
-    defaultValues: { name: '', slug: '', parentId: '' },
+    defaultValues: { name: '', slug: '', parentId: ROOT_PARENT },
     resolver: (values, context, options) =>
       zodResolver(
         z.object({
@@ -62,14 +70,14 @@ export function CategoriesPage() {
                   const payload = {
                     name: values.name,
                     slug: values.slug.trim() || undefined,
-                    parentId: values.parentId || null,
+                    parentId: values.parentId === ROOT_PARENT ? null : values.parentId,
                   };
                   if (editingId) {
                     await updateCategory(editingId, payload);
                   } else {
                     await createCategory(payload);
                   }
-                  form.reset({ name: '', slug: '', parentId: '' });
+                  form.reset({ name: '', slug: '', parentId: ROOT_PARENT });
                   setEditingId(null);
                   toast.success(t('common.saved'));
                   void queryClient.invalidateQueries({ queryKey: ['categories-tree'] });
@@ -78,30 +86,55 @@ export function CategoriesPage() {
                 }
               })}
             >
-              <div className="space-y-2">
-                <Label htmlFor="name">{t('common.name')}</Label>
+              <Field>
+                <FieldLabel htmlFor="name">{t('common.name')}</FieldLabel>
                 <Input id="name" {...form.register('name')} />
-                {form.formState.errors.name ? (
-                  <FieldError>{form.formState.errors.name.message}</FieldError>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="slug">{t('category.slug')}</Label>
+                <FieldError>{form.formState.errors.name?.message}</FieldError>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="slug">{t('category.slug')}</FieldLabel>
                 <Input id="slug" {...form.register('slug')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="parentId">{t('category.parent')}</Label>
-                <Select id="parentId" {...form.register('parentId')}>
-                  <option value="">{t('category.root')}</option>
-                  {rows
-                    .filter((row) => row.id !== editingId)
-                    .map((row) => (
-                      <option key={row.id} value={row.id}>
-                        {'—'.repeat(row.depth)} {row.name}
-                      </option>
-                    ))}
-                </Select>
-              </div>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="parentId">{t('category.parent')}</FieldLabel>
+                <Controller
+                  control={form.control}
+                  name="parentId"
+                  render={({ field }) => {
+                    const options = [
+                      { value: ROOT_PARENT, label: t('category.root') },
+                      ...rows
+                        .filter((row) => row.id !== editingId)
+                        .map((row) => ({
+                          value: row.id,
+                          label: `${'—'.repeat(row.depth)} ${row.name}`,
+                        })),
+                    ];
+                    return (
+                      <Select
+                        items={options}
+                        value={field.value}
+                        onValueChange={(value) => {
+                          if (typeof value === 'string') {
+                            field.onChange(value);
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="parentId" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {options.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
+                />
+              </Field>
               <div className="flex gap-2">
                 <Button type="submit" disabled={form.formState.isSubmitting}>
                   {t('common.save')}
@@ -112,7 +145,7 @@ export function CategoriesPage() {
                     variant="outline"
                     onClick={() => {
                       setEditingId(null);
-                      form.reset({ name: '', slug: '', parentId: '' });
+                      form.reset({ name: '', slug: '', parentId: ROOT_PARENT });
                     }}
                   >
                     {t('common.cancel')}
@@ -145,7 +178,7 @@ export function CategoriesPage() {
                     form.reset({
                       name: row.name,
                       slug: row.slug,
-                      parentId: row.parentId ?? '',
+                      parentId: row.parentId ?? ROOT_PARENT,
                     });
                   }}
                 >
@@ -153,13 +186,8 @@ export function CategoriesPage() {
                 </Button>
               ) : null}
               {canDelete ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    if (!window.confirm(t('common.confirmDelete'))) {
-                      return;
-                    }
+                <ConfirmDeleteButton
+                  onConfirm={() => {
                     void deleteCategory(row.id)
                       .then(() => {
                         toast.success(t('common.deleted'));
@@ -171,9 +199,7 @@ export function CategoriesPage() {
                         );
                       });
                   }}
-                >
-                  {t('common.delete')}
-                </Button>
+                />
               ) : null}
             </div>
           </div>

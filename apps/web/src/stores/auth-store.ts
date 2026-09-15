@@ -8,9 +8,9 @@ import {
   signInEmail,
   signOut,
   signUpEmail,
-  type AuthUser,
 } from '@/apis';
 import { i18n } from '@/i18n';
+import type { AuthPersist, AuthUser } from '@/types';
 
 type AuthState = {
   sessionToken: string | null;
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'nexus-auth',
-      partialize: (state) => ({
+      partialize: (state): AuthPersist => ({
         sessionToken: state.sessionToken,
         accessToken: state.accessToken,
         user: state.user,

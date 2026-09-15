@@ -9,9 +9,8 @@ import { requestPasswordReset } from '@/apis';
 import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldError } from '@/components/ui/field-error';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { paths } from '@/routers/paths';
 
 type Values = {
@@ -59,13 +58,11 @@ export function ForgotPasswordPage() {
                 }
               })}
             >
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('common.email')}</Label>
+              <Field>
+                <FieldLabel htmlFor="email">{t('common.email')}</FieldLabel>
                 <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
-                {form.formState.errors.email ? (
-                  <FieldError>{form.formState.errors.email.message}</FieldError>
-                ) : null}
-              </div>
+                <FieldError>{form.formState.errors.email?.message}</FieldError>
+              </Field>
               <Button className="w-full" type="submit" disabled={form.formState.isSubmitting}>
                 {t('auth.sendReset')}
               </Button>

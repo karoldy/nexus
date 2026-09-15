@@ -4,10 +4,18 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { deleteKnowledge, listKnowledges } from '@/apis';
+import { ConfirmDeleteButton } from '@/components/confirm-delete-button';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/form-controls';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { WorkspaceShell } from '@/components/workspace-shell';
 import { useKnowledgePermissions } from '@/hooks/use-knowledge-permissions';
 import { paths } from '@/routers/paths';
@@ -34,10 +42,8 @@ export function KnowledgesPage() {
   return (
     <WorkspaceShell title={t('knowledge.title')}>
       <div className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <label className="text-sm" htmlFor="q">
-            {t('knowledge.search')}
-          </label>
+        <Field className="w-56">
+          <FieldLabel htmlFor="q">{t('knowledge.search')}</FieldLabel>
           <Input
             id="q"
             value={q}
@@ -46,24 +52,34 @@ export function KnowledgesPage() {
               setQ(event.target.value);
             }}
           />
-        </div>
-        <div className="space-y-1">
-          <label className="text-sm" htmlFor="published">
-            {t('knowledge.published')}
-          </label>
+        </Field>
+        <Field className="w-40">
+          <FieldLabel htmlFor="published">{t('knowledge.published')}</FieldLabel>
           <Select
-            id="published"
             value={published}
-            onChange={(event) => {
+            items={[
+              { value: 'all', label: t('knowledge.all') },
+              { value: 'true', label: t('knowledge.publishedYes') },
+              { value: 'false', label: t('knowledge.draft') },
+            ]}
+            onValueChange={(value) => {
+              if (value !== 'all' && value !== 'true' && value !== 'false') {
+                return;
+              }
               setPage(1);
-              setPublished(event.target.value as 'all' | 'true' | 'false');
+              setPublished(value);
             }}
           >
-            <option value="all">{t('knowledge.all')}</option>
-            <option value="true">{t('knowledge.publishedYes')}</option>
-            <option value="false">{t('knowledge.draft')}</option>
+            <SelectTrigger id="published" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('knowledge.all')}</SelectItem>
+              <SelectItem value="true">{t('knowledge.publishedYes')}</SelectItem>
+              <SelectItem value="false">{t('knowledge.draft')}</SelectItem>
+            </SelectContent>
           </Select>
-        </div>
+        </Field>
         {canCreate ? (
           <Link className={buttonVariants()} to={paths.knowledgeNew}>
             {t('knowledge.create')}
@@ -92,13 +108,8 @@ export function KnowledgesPage() {
                 </p>
               </div>
               {canDelete ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (!window.confirm(t('common.confirmDelete'))) {
-                      return;
-                    }
+                <ConfirmDeleteButton
+                  onConfirm={() => {
                     void deleteKnowledge(item.id)
                       .then(() => {
                         toast.success(t('common.deleted'));
@@ -110,9 +121,7 @@ export function KnowledgesPage() {
                         );
                       });
                   }}
-                >
-                  {t('common.delete')}
-                </Button>
+                />
               ) : null}
             </CardContent>
           </Card>

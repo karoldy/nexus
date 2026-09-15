@@ -1,56 +1,38 @@
-import { deleteData, getData, patchData, postData, type Paginated } from './http';
+import type {
+  Category,
+  CategoryFlatNode,
+  CategoryPayload,
+  CategoryTreeNode,
+  PageQuery,
+  Paginated,
+} from '@/types';
+import { deleteData, getData, patchData, postData } from './http';
 
-export type Category = {
-  id: string;
-  ownerId: string;
-  parentId: string | null;
-  name: string;
-  slug: string;
-  description: string | null;
-  sort: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-};
-
-export type CategoryTreeNode = Category & { children: CategoryTreeNode[] };
-
-export type CategoryPayload = {
-  name: string;
-  slug?: string;
-  description?: string | null;
-  parentId?: string | null;
-  sort?: number;
-};
-
-export function listCategories(params?: { page?: number; pageSize?: number }) {
-  return getData<Paginated<Category>>('/api/categories', params);
+export function listCategories(params?: PageQuery) {
+  return getData<Paginated<Category>>('/categories', params);
 }
 
 export function fetchCategoryTree() {
-  return getData<CategoryTreeNode[]>('/api/categories/tree');
+  return getData<CategoryTreeNode[]>('/categories/tree');
 }
 
 export function fetchCategory(id: string) {
-  return getData<Category>(`/api/categories/${id}`);
+  return getData<Category>(`/categories/${id}`);
 }
 
 export function createCategory(body: CategoryPayload) {
-  return postData<Category>('/api/categories', body);
+  return postData<Category>('/categories', body);
 }
 
 export function updateCategory(id: string, body: Partial<CategoryPayload>) {
-  return patchData<Category>(`/api/categories/${id}`, body);
+  return patchData<Category>(`/categories/${id}`, body);
 }
 
 export function deleteCategory(id: string) {
-  return deleteData<Category>(`/api/categories/${id}`);
+  return deleteData<Category>(`/categories/${id}`);
 }
 
-export function flattenCategoryTree(
-  nodes: CategoryTreeNode[],
-  depth = 0,
-): Array<Category & { depth: number }> {
+export function flattenCategoryTree(nodes: CategoryTreeNode[], depth = 0): CategoryFlatNode[] {
   return nodes.flatMap((node) => [
     { ...node, depth },
     ...flattenCategoryTree(node.children, depth + 1),

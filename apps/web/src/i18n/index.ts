@@ -1,12 +1,12 @@
 import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
+import { APP_LANGUAGES, type AppLanguage } from '@/types';
 import en from './locales/en.json';
 import sc from './locales/sc.json';
 import tc from './locales/tc.json';
 
-export const appLanguages = ['sc', 'tc', 'en'] as const;
-export type AppLanguage = (typeof appLanguages)[number];
+export const appLanguages = APP_LANGUAGES;
 
 const htmlLang: Record<AppLanguage, string> = {
   sc: 'zh-CN',

@@ -8,9 +8,8 @@ import { resetPassword } from '@/apis';
 import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldError } from '@/components/ui/field-error';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { paths } from '@/routers/paths';
 
 type Values = {
@@ -67,30 +66,26 @@ export function ResetPasswordPage() {
                 }
               })}
             >
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('auth.newPassword')}</Label>
+              <Field>
+                <FieldLabel htmlFor="password">{t('auth.newPassword')}</FieldLabel>
                 <Input
                   id="password"
                   type="password"
                   autoComplete="new-password"
                   {...form.register('password')}
                 />
-                {form.formState.errors.password ? (
-                  <FieldError>{form.formState.errors.password.message}</FieldError>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm">{t('auth.confirmPassword')}</Label>
+                <FieldError>{form.formState.errors.password?.message}</FieldError>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="confirm">{t('auth.confirmPassword')}</FieldLabel>
                 <Input
                   id="confirm"
                   type="password"
                   autoComplete="new-password"
                   {...form.register('confirm')}
                 />
-                {form.formState.errors.confirm ? (
-                  <FieldError>{form.formState.errors.confirm.message}</FieldError>
-                ) : null}
-              </div>
+                <FieldError>{form.formState.errors.confirm?.message}</FieldError>
+              </Field>
               <Button className="w-full" type="submit" disabled={form.formState.isSubmitting}>
                 {t('auth.saveNewPassword')}
               </Button>

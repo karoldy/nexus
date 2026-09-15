@@ -1,13 +1,6 @@
-import { http, type ApiEnvelope, withToken } from '@/config/axios.config';
+import type { ApiEnvelope } from '@/types';
+import { http, withToken } from '@/config/axios.config';
 import { useAuthStore } from '@/stores/auth-store';
-
-export type Paginated<T> = {
-  records: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-};
 
 export async function authed() {
   const token = await useAuthStore.getState().ensureAccessToken();

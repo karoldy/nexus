@@ -8,8 +8,6 @@ export {
   signInEmail,
   signOut,
   signUpEmail,
-  type AuthUser,
-  type MePayload,
 } from './auth';
 export {
   createCategory,
@@ -19,9 +17,6 @@ export {
   flattenCategoryTree,
   listCategories,
   updateCategory,
-  type Category,
-  type CategoryPayload,
-  type CategoryTreeNode,
 } from './category';
 export {
   createKnowledge,
@@ -29,9 +24,5 @@ export {
   fetchKnowledge,
   listKnowledges,
   updateKnowledge,
-  type Knowledge,
-  type KnowledgeListParams,
-  type KnowledgePayload,
 } from './knowledge';
-export { createTag, deleteTag, listTags, updateTag, type Tag } from './tag';
-export type { Paginated } from './http';
+export { createTag, deleteTag, listTags, updateTag } from './tag';

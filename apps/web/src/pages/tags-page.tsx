@@ -6,11 +6,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { createTag, deleteTag, listTags, updateTag } from '@/apis';
+import { ConfirmDeleteButton } from '@/components/confirm-delete-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldError } from '@/components/ui/field-error';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { WorkspaceShell } from '@/components/workspace-shell';
 import { useKnowledgePermissions } from '@/hooks/use-knowledge-permissions';
 
@@ -63,13 +63,11 @@ export function TagsPage() {
                 }
               })}
             >
-              <div className="space-y-2">
-                <Label htmlFor="name">{t('common.name')}</Label>
+              <Field>
+                <FieldLabel htmlFor="name">{t('common.name')}</FieldLabel>
                 <Input id="name" {...form.register('name')} />
-                {form.formState.errors.name ? (
-                  <FieldError>{form.formState.errors.name.message}</FieldError>
-                ) : null}
-              </div>
+                <FieldError>{form.formState.errors.name?.message}</FieldError>
+              </Field>
               <div className="flex gap-2">
                 <Button type="submit" disabled={form.formState.isSubmitting}>
                   {t('common.save')}
@@ -113,13 +111,8 @@ export function TagsPage() {
                 </Button>
               ) : null}
               {canDelete ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    if (!window.confirm(t('common.confirmDelete'))) {
-                      return;
-                    }
+                <ConfirmDeleteButton
+                  onConfirm={() => {
                     void deleteTag(tag.id)
                       .then(() => {
                         toast.success(t('common.deleted'));
@@ -131,9 +124,7 @@ export function TagsPage() {
                         );
                       });
                   }}
-                >
-                  {t('common.delete')}
-                </Button>
+                />
               ) : null}
             </div>
           </div>

@@ -6,9 +6,8 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldError } from '@/components/ui/field-error';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { WorkspaceShell } from '@/components/workspace-shell';
 import { paths } from '@/routers/paths';
 import { useAuthStore } from '@/stores/auth-store';
@@ -80,42 +79,36 @@ export function HomePage() {
                 }
               })}
             >
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">{t('home.currentPassword')}</Label>
+              <Field>
+                <FieldLabel htmlFor="currentPassword">{t('home.currentPassword')}</FieldLabel>
                 <Input
                   id="currentPassword"
                   type="password"
                   autoComplete="current-password"
                   {...form.register('currentPassword')}
                 />
-                {form.formState.errors.currentPassword ? (
-                  <FieldError>{form.formState.errors.currentPassword.message}</FieldError>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">{t('auth.newPassword')}</Label>
+                <FieldError>{form.formState.errors.currentPassword?.message}</FieldError>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="newPassword">{t('auth.newPassword')}</FieldLabel>
                 <Input
                   id="newPassword"
                   type="password"
                   autoComplete="new-password"
                   {...form.register('newPassword')}
                 />
-                {form.formState.errors.newPassword ? (
-                  <FieldError>{form.formState.errors.newPassword.message}</FieldError>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm">{t('home.confirmNewPassword')}</Label>
+                <FieldError>{form.formState.errors.newPassword?.message}</FieldError>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="confirm">{t('home.confirmNewPassword')}</FieldLabel>
                 <Input
                   id="confirm"
                   type="password"
                   autoComplete="new-password"
                   {...form.register('confirm')}
                 />
-                {form.formState.errors.confirm ? (
-                  <FieldError>{form.formState.errors.confirm.message}</FieldError>
-                ) : null}
-              </div>
+                <FieldError>{form.formState.errors.confirm?.message}</FieldError>
+              </Field>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {t('home.savePassword')}
               </Button>
