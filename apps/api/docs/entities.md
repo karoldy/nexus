@@ -174,7 +174,7 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 
 ## 2. Knowledge
 
-本节已按软删除 + 布尔状态对齐。`status` 表示启用/禁用；草稿用 `published`，不再用 `DRAFT` / `ACTIVE` / `ARCHIVED` 枚举。
+软删除一律用 `deleted_at`（与 auth `user` 相同），**不用 `status`**。草稿/发布用 `published`，不再用 `DRAFT` / `ACTIVE` / `ARCHIVED` 枚举。
 
 ### categories
 
@@ -189,7 +189,6 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | slug        | varchar(120) | not null                |                                  |
 | description | text         | nullable                |                                  |
 | sort        | int          | not null, default 0     | 同级排序，越小越前               |
-| status      | boolean      | not null, default true  | `true` 启用，`false` 禁用        |
 | created_at  | timestamptz  | not null                |                                  |
 | updated_at  | timestamptz  | not null                |                                  |
 | deleted_at  | timestamptz  | nullable                |                                  |
@@ -202,15 +201,14 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 
 横向特征，如 Hook、性能、设计模式。
 
-| 字段       | 类型        | 约束                   | 说明                      |
-| ---------- | ----------- | ---------------------- | ------------------------- |
-| id         | uuid        | PK                     |                           |
-| owner_id   | uuid        | FK user, not null      |                           |
-| name       | varchar(50) | not null               |                           |
-| status     | boolean     | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null               |                           |
-| updated_at | timestamptz | not null               |                           |
-| deleted_at | timestamptz | nullable               |                           |
+| 字段       | 类型        | 约束              | 说明 |
+| ---------- | ----------- | ----------------- | ---- |
+| id         | uuid        | PK                |      |
+| owner_id   | uuid        | FK user, not null |      |
+| name       | varchar(50) | not null          |      |
+| created_at | timestamptz | not null          |      |
+| updated_at | timestamptz | not null          |      |
+| deleted_at | timestamptz | nullable          |      |
 
 部分唯一索引：`(owner_id, name) WHERE deleted_at IS NULL`。
 
@@ -227,14 +225,13 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | summary     | text         | nullable                |                                    |
 | body        | text         | nullable                | 可选的要点正文                     |
 | published   | boolean      | not null, default false | `false` 草稿，`true` 已发布        |
-| status      | boolean      | not null, default true  | `true` 启用，`false` 禁用          |
 | created_at  | timestamptz  | not null                |                                    |
 | updated_at  | timestamptz  | not null                |                                    |
 | deleted_at  | timestamptz  | nullable                |                                    |
 
-默认列表：`deleted_at IS NULL AND status = true AND published = true`。
+工作台列表：`deleted_at IS NULL`（包含草稿）。公开浏览（本期不做）才过滤 `published = true`。
 
-索引：`(owner_id, category_id)`、`(owner_id, status)`、`(owner_id, published)`（均配合查询侧过滤 `deleted_at`）。
+索引：`(owner_id, category_id)`、`(owner_id, published)`（均配合查询侧过滤 `deleted_at`）。
 
 ### knowledge_tags
 

@@ -4,7 +4,20 @@
     "email": "Email",
     "password": "Password",
     "name": "Name",
-    "none": "None"
+    "none": "None",
+    "save": "Save",
+    "saved": "Saved",
+    "saveFailed": "Save failed",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleted": "Deleted",
+    "deleteFailed": "Delete failed",
+    "confirmDelete": "Delete this item?",
+    "cancel": "Cancel",
+    "back": "Back",
+    "prev": "Previous",
+    "next": "Next",
+    "loadFailed": "Failed to load"
   },
   "language": {
     "sc": "简体中文",
@@ -15,6 +28,7 @@
     "email": "Enter a valid email",
     "passwordMin": "Password must be at least 8 characters",
     "nameRequired": "Name is required",
+    "titleRequired": "Title is required",
     "confirmPassword": "Confirm your password",
     "passwordMismatch": "Passwords do not match",
     "currentPasswordMin": "Current password must be at least 8 characters",
@@ -57,6 +71,12 @@
     "resetSuccess": "Password reset. Please sign in again",
     "notSignedIn": "Not signed in"
   },
+  "nav": {
+    "knowledges": "Knowledge",
+    "categories": "Categories",
+    "tags": "Tags",
+    "account": "Account"
+  },
   "home": {
     "workspace": "Workspace",
     "logout": "Sign out",
@@ -70,6 +90,37 @@
     "confirmNewPassword": "Confirm new password",
     "savePassword": "Save password",
     "updateFailed": "Update failed",
-    "passwordUpdated": "Password updated"
+    "passwordUpdated": "Password updated",
+    "goKnowledges": "Open knowledge list"
+  },
+  "knowledge": {
+    "title": "Knowledge",
+    "create": "New knowledge",
+    "edit": "Edit knowledge",
+    "search": "Search",
+    "published": "Publish state",
+    "all": "All",
+    "publishedYes": "Published",
+    "draft": "Draft",
+    "empty": "No knowledge yet",
+    "titleField": "Title",
+    "summary": "Summary",
+    "body": "Body",
+    "category": "Category"
+  },
+  "category": {
+    "title": "Categories",
+    "create": "New category",
+    "edit": "Edit category",
+    "slug": "Slug",
+    "parent": "Parent",
+    "root": "Root",
+    "empty": "No categories yet"
+  },
+  "tag": {
+    "title": "Tags",
+    "create": "New tag",
+    "edit": "Edit tag",
+    "empty": "No tags yet"
   }
 }

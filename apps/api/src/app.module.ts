@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './shared/database/database.module';
 import { HttpModule } from './shared/http/http.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
 import { RbacModule } from './rbac/rbac.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { RbacModule } from './rbac/rbac.module';
     DatabaseModule,
     RbacModule,
     AuthModule,
+    KnowledgeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
