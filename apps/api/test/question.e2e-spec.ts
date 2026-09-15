@@ -342,4 +342,279 @@ describe.skipIf(!hasDatabase)('question e2e', () => {
       .expect(403);
     expect(res.body.success).toBe(false);
   });
+
+  it('creates SINGLE_CHOICE, MULTIPLE_CHOICE, SHORT_ANSWER, and FILL_BLANK', async () => {
+    const optionA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const optionB = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+    const single = await request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        type: 'SINGLE_CHOICE',
+        stem: `Single ${suffix}`,
+        options: [
+          { id: optionA, text: 'A' },
+          { id: optionB, text: 'B' },
+        ],
+        answer: { optionId: optionA },
+      })
+      .expect(201);
+    expect(single.body.data.type).toBe('SINGLE_CHOICE');
+    expect(single.body.data.answer).toEqual({ optionId: optionA });
+
+    const multi = await request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        type: 'MULTIPLE_CHOICE',
+        stem: `Multi ${suffix}`,
+        options: [
+          { id: optionA, text: 'A' },
+          { id: optionB, text: 'B' },
+        ],
+        answer: { optionIds: [optionA, optionB] },
+      })
+      .expect(201);
+    expect(multi.body.data.type).toBe('MULTIPLE_CHOICE');
+
+    const shortAnswer = await request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        type: 'SHORT_ANSWER',
+        stem: `Short ${suffix}`,
+        answer: { text: '  hello  ' },
+      })
+      .expect(201);
+    expect(shortAnswer.body.data.type).toBe('SHORT_ANSWER');
+    expect(shortAnswer.body.data.answer).toEqual({ text: 'hello' });
+    expect(shortAnswer.body.data.options).toBeNull();
+
+    const fill = await request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        type: 'FILL_BLANK',
+        stem: `Fill ${suffix}`,
+        answer: { blanks: [' one ', 'two'] },
+      })
+      .expect(201);
+    expect(fill.body.data.type).toBe('FILL_BLANK');
+    expect(fill.body.data.answer).toEqual({ blanks: ['one', 'two'] });
+  });
+
+  it('adds published questions to a draft collection in questionIds order', async () => {
+    const first = await createPublishedQuestion(`Member first ${suffix}`);
+    const second = await createPublishedQuestion(`Member second ${suffix}`);
+
+    const created = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: `Draft collection ${suffix}`,
+        published: false,
+        questionIds: [second.body.data.id, first.body.data.id],
+      })
+      .expect(201);
+
+    expect(created.body.data.published).toBe(false);
+    expect(created.body.data.questions).toEqual([
+      {
+        id: second.body.data.id,
+        type: 'TRUE_FALSE',
+        stem: second.body.data.stem,
+        published: true,
+        sort: 0,
+      },
+      {
+        id: first.body.data.id,
+        type: 'TRUE_FALSE',
+        stem: first.body.data.stem,
+        published: true,
+        sort: 1,
+      },
+    ]);
+    expect(created.body.data.questions[0].answer).toBeUndefined();
+  });
+
+  it('rejects draft questions in collection questionIds', async () => {
+    const draft = await request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        type: 'TRUE_FALSE',
+        stem: `Draft stay out ${suffix}`,
+        answer: { value: false },
+        published: false,
+      })
+      .expect(201);
+
+    const res = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: `Draft member ${suffix}`,
+        questionIds: [draft.body.data.id],
+      })
+      .expect(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.errorInfo).toMatch(/draft questions cannot be added to collections/i);
+  });
+
+  it('rejects duplicate collection names with 409', async () => {
+    const name = `Unique collection ${suffix}`;
+    await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name })
+      .expect(201);
+
+    const res = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name })
+      .expect(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.errorInfo).toMatch(/collection name already exists/i);
+  });
+
+  it('hides collections from other owners', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: `Private collection ${suffix}` })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get(`/api/collections/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(404);
+  });
+
+  it('lists questions belonging to a collectionId and 404s when the collection is missing', async () => {
+    const member = await createPublishedQuestion(`In collection ${suffix}`);
+    const outsider = await createPublishedQuestion(`Outside collection ${suffix}`);
+
+    const collection = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: `Filter collection ${suffix}`,
+        questionIds: [member.body.data.id],
+      })
+      .expect(201);
+
+    const listed = await request(app.getHttpServer())
+      .get('/api/questions')
+      .query({ collectionId: collection.body.data.id })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const ids = listed.body.data.records.map((record: { id: string }) => record.id);
+    expect(ids).toContain(member.body.data.id);
+    expect(ids).not.toContain(outsider.body.data.id);
+
+    await request(app.getHttpServer())
+      .get('/api/questions')
+      .query({ collectionId: '00000000-0000-4000-8000-000000000000' })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(404);
+  });
+
+  it('replaces collection members when questionIds is sent and clears them with []', async () => {
+    const keep = await createPublishedQuestion(`Keep member ${suffix}`);
+    const drop = await createPublishedQuestion(`Drop member ${suffix}`);
+
+    const created = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: `Replace members ${suffix}`,
+        questionIds: [keep.body.data.id, drop.body.data.id],
+      })
+      .expect(201);
+    expect(created.body.data.questions).toHaveLength(2);
+
+    const cleared = await request(app.getHttpServer())
+      .patch(`/api/collections/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ questionIds: [] })
+      .expect(200);
+    expect(cleared.body.data.questions).toEqual([]);
+
+    const restored = await request(app.getHttpServer())
+      .patch(`/api/collections/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ questionIds: [keep.body.data.id] })
+      .expect(200);
+    expect(restored.body.data.questions).toEqual([
+      {
+        id: keep.body.data.id,
+        type: 'TRUE_FALSE',
+        stem: keep.body.data.stem,
+        published: true,
+        sort: 0,
+      },
+    ]);
+
+    const omitted = await request(app.getHttpServer())
+      .patch(`/api/collections/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ description: 'kept members' })
+      .expect(200);
+    expect(omitted.body.data.questions).toHaveLength(1);
+    expect(omitted.body.data.questions[0].id).toBe(keep.body.data.id);
+  });
+
+  it('rejects duplicate questionIds and hides a collection after soft-delete', async () => {
+    const published = await createPublishedQuestion(`Dup member ${suffix}`);
+
+    const duplicate = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: `Dup ids ${suffix}`,
+        questionIds: [published.body.data.id, published.body.data.id],
+      })
+      .expect(400);
+    expect(duplicate.body.success).toBe(false);
+
+    const created = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: `Delete collection ${suffix}` })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/api/collections/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/api/collections/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(404);
+
+    const listed = await request(app.getHttpServer())
+      .get('/api/collections')
+      .query({ q: `Delete collection ${suffix}` })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(
+      listed.body.data.records.some((record: { id: string }) => record.id === created.body.data.id),
+    ).toBe(false);
+  });
+
+  async function createPublishedQuestion(stem: string) {
+    return request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        type: 'TRUE_FALSE',
+        stem,
+        answer: { value: true },
+        published: true,
+      })
+      .expect(201);
+  }
 });

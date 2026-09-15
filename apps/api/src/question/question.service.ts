@@ -106,6 +106,21 @@ export class QuestionService {
     return withKnowledges;
   }
 
+  async loadPublishedQuestion(ownerId: string, id: string) {
+    const [row] = await this.db
+      .select()
+      .from(questions)
+      .where(and(eq(questions.id, id), eq(questions.ownerId, ownerId), isNull(questions.deletedAt)))
+      .limit(1);
+    if (!row) {
+      throw new NotFoundException();
+    }
+    if (row.published === false) {
+      throw new BadRequestException('Draft questions cannot be added to collections');
+    }
+    return row;
+  }
+
   async create(ownerId: string, dto: CreateQuestionDto) {
     const published = dto.published ?? false;
     const knowledgeIds = dto.knowledgeIds ?? [];

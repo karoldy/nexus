@@ -10,6 +10,7 @@ import {
   IsString,
   IsUUID,
   Max,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -133,4 +134,64 @@ export class QuestionListQueryDto extends PageQueryDto {
   @IsOptional()
   @IsString()
   q?: string;
+}
+
+export class CollectionListQueryDto extends PageQueryDto {
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === true || value === 'true') {
+      return true;
+    }
+    if (value === false || value === 'false') {
+      return false;
+    }
+    return value;
+  })
+  @IsBoolean()
+  published?: boolean;
+
+  @IsOptional()
+  @IsString()
+  q?: string;
+}
+
+export class CreateCollectionDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  questionIds?: string[];
+}
+
+export class UpdateCollectionDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  questionIds?: string[];
 }
