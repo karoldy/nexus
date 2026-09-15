@@ -1,12 +1,18 @@
 import { and, eq, isNull } from 'drizzle-orm';
+import { auth } from '../auth/auth';
 import { getDb } from '../shared/database/client';
-import { permissions, rolePermissions, roles } from '../shared/database/schema/rbac';
+import { user } from '../shared/database/schema/auth';
+import { permissions, rolePermissions, roles, userRoles } from '../shared/database/schema/rbac';
 import { permissionCodes } from './permissions';
 
 const ROLE_DEFS = [
   { code: 'admin', name: 'Admin' },
   { code: 'user', name: 'User' },
 ] as const;
+
+const ROOT_EMAIL = 'root@nexus.com';
+const ROOT_PASSWORD = 'nexus123';
+const ROOT_NAME = 'Root';
 
 async function upsertRole(code: string, name: string) {
   const db = getDb();
@@ -99,5 +105,61 @@ export async function seedRbac(): Promise<void> {
       await ensureRolePermission(roleRows.user.id, permission.id);
     }
   }
+
+  await seedRootAdmin(roleRows.admin.id);
 }
 
+async function ensureUserRole(userId: string, roleId: string) {
+  const db = getDb();
+  const existing = await db
+    .select()
+    .from(userRoles)
+    .where(
+      and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId), isNull(userRoles.deletedAt)),
+    )
+    .limit(1);
+
+  if (existing[0]) {
+    return;
+  }
+
+  await db.insert(userRoles).values({
+    id: crypto.randomUUID(),
+    userId,
+    roleId,
+  });
+}
+
+async function seedRootAdmin(adminRoleId: string) {
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(user)
+    .where(and(eq(user.email, ROOT_EMAIL), isNull(user.deletedAt)))
+    .limit(1);
+
+  let userId = existing?.id;
+
+  if (!userId) {
+    const created = await auth.api.signUpEmail({
+      body: {
+        name: ROOT_NAME,
+        email: ROOT_EMAIL,
+        password: ROOT_PASSWORD,
+      },
+    });
+    userId = created.user.id;
+  }
+
+  await db
+    .update(user)
+    .set({
+      role: 'admin',
+      emailVerified: true,
+      banned: false,
+      updatedAt: new Date(),
+    })
+    .where(eq(user.id, userId));
+
+  await ensureUserRole(userId, adminRoleId);
+}

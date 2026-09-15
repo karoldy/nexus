@@ -49,6 +49,9 @@ export const auth = betterAuth({
       jwt: {
         expirationTime: ACCESS_JWT_EXPIRES_IN,
       },
+      jwks: {
+        disablePrivateKeyEncryption: true,
+      },
     }),
   ],
   database: drizzleAdapter(getDb(), {
