@@ -349,12 +349,11 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | explanation | text        | nullable                | 解析                          |
 | difficulty  | int         | not null, default 3     | 1–5                           |
 | published   | boolean     | not null, default false | `false` 草稿，`true` 已发布   |
-| status      | boolean     | not null, default true  | `true` 启用，`false` 禁用     |
 | created_at  | timestamptz | not null                |                               |
 | updated_at  | timestamptz | not null                |                               |
 | deleted_at  | timestamptz | nullable                |                               |
 
-默认题库列表：`deleted_at IS NULL AND status = true AND published = true`。组卷、加入题集时只允许未删除且启用且已发布的题。
+默认题库列表：`deleted_at IS NULL`（包含草稿）。组卷、加入题集时只允许未删除且已发布的题。
 
 | type            | options | answer                     |
 | --------------- | ------- | -------------------------- |
@@ -377,7 +376,7 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | updated_at   | timestamptz | not null                |      |
 | deleted_at   | timestamptz | nullable                |      |
 
-部分唯一索引：`(question_id, knowledge_id) WHERE deleted_at IS NULL`。挂接时两端必须同一 `owner_id` 且均未删除。
+部分唯一索引：`(question_id, knowledge_id) WHERE deleted_at IS NULL`。挂接时两端必须同一 `owner_id`、`deleted_at IS NULL`，且题目与知识点均为 `published = true`。
 
 ### collections
 
@@ -390,12 +389,11 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | name        | varchar(200) | not null                |                             |
 | description | text         | nullable                |                             |
 | published   | boolean      | not null, default false | `false` 草稿，`true` 已发布 |
-| status      | boolean      | not null, default true  | `true` 启用，`false` 禁用   |
 | created_at  | timestamptz  | not null                |                             |
 | updated_at  | timestamptz  | not null                |                             |
 | deleted_at  | timestamptz  | nullable                |                             |
 
-默认列表：`deleted_at IS NULL AND status = true AND published = true`。
+默认列表：`deleted_at IS NULL`（包含草稿）。加入题目时题目须未删除且 `published = true`；草稿题集可包含已发布题目。
 
 ### collection_questions
 
@@ -411,7 +409,7 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | updated_at    | timestamptz | not null                 |      |
 | deleted_at    | timestamptz | nullable                 |      |
 
-部分唯一索引：`(collection_id, question_id) WHERE deleted_at IS NULL`。
+部分唯一索引：`(collection_id, question_id) WHERE deleted_at IS NULL`。加入题集时题集与题目须同一 `owner_id`、`deleted_at IS NULL`，且题目 `published = true`。
 
 题目或题集软删除后，关联行保留，默认查询不可见。
 
