@@ -33,7 +33,12 @@
     "passwordMismatch": "两次密码不一致",
     "currentPasswordMin": "当前密码至少 8 位",
     "newPasswordMin": "新密码至少 8 位",
-    "confirmNewPassword": "请再次输入新密码"
+    "confirmNewPassword": "请再次输入新密码",
+    "stemRequired": "请填写题干",
+    "optionMin": "选择题至少两个选项",
+    "optionText": "选项内容不能为空",
+    "answerRequired": "请填写答案",
+    "blankRequired": "请填写所有填空"
   },
   "auth": {
     "kicker": "NEXUS / AUTH",
@@ -73,6 +78,8 @@
   },
   "nav": {
     "knowledges": "知识",
+    "questions": "题目",
+    "collections": "题库",
     "categories": "分类",
     "tags": "标签",
     "account": "账号"
@@ -91,7 +98,9 @@
     "savePassword": "保存密码",
     "updateFailed": "更新失败",
     "passwordUpdated": "密码已更新",
-    "goKnowledges": "进入知识列表"
+    "goKnowledges": "进入知识列表",
+    "goQuestions": "进入题目列表",
+    "goCollections": "进入题库"
   },
   "knowledge": {
     "title": "知识",
@@ -122,5 +131,54 @@
     "create": "新建标签",
     "edit": "编辑标签",
     "empty": "暂无标签"
+  },
+  "question": {
+    "title": "题目",
+    "create": "新建题目",
+    "edit": "编辑题目",
+    "search": "搜索",
+    "published": "发布状态",
+    "all": "全部",
+    "publishedYes": "已发布",
+    "draft": "草稿",
+    "empty": "暂无题目",
+    "type": "题型",
+    "stem": "题干",
+    "options": "选项",
+    "answer": "答案",
+    "blanks": "填空答案",
+    "explanation": "解析",
+    "difficulty": "难度",
+    "difficultyValue": "难度 {{value}}",
+    "knowledges": "知识点",
+    "knowledgesHint": "仅已发布题目可挂已发布知识点",
+    "addOption": "添加选项",
+    "removeOption": "删除",
+    "addBlank": "添加空",
+    "removeBlank": "删除",
+    "true": "正确",
+    "false": "错误",
+    "types": {
+      "SINGLE_CHOICE": "单选",
+      "MULTIPLE_CHOICE": "多选",
+      "TRUE_FALSE": "判断",
+      "SHORT_ANSWER": "简答",
+      "FILL_BLANK": "填空"
+    }
+  },
+  "collection": {
+    "title": "题库",
+    "create": "新建题集",
+    "edit": "编辑题集",
+    "search": "搜索",
+    "published": "发布状态",
+    "all": "全部",
+    "publishedYes": "已发布",
+    "draft": "草稿",
+    "empty": "暂无题集",
+    "description": "描述",
+    "questions": "收录题目",
+    "questionsHint": "只能收录已发布题目，勾选顺序即排序",
+    "noQuestions": "暂无可收录的已发布题目"
   }
 }

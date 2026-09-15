@@ -2,33 +2,26 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { getDb } from '../shared/database/client';
 import { permissions, rolePermissions, roles, userRoles } from '../shared/database/schema/rbac';
 
-export const RESOURCES = [
-  'knowledge',
-  'content',
-  'question',
-  'exam',
-  'task',
-] as const;
+export const RESOURCES = ['knowledge', 'content', 'question', 'exam', 'task'] as const;
 
 export const ACTIONS = ['read', 'create', 'update', 'delete'] as const;
 
+export const ADMIN_ROLE = 'admin';
+
 export function permissionCodes(): string[] {
-  return RESOURCES.flatMap((resource) =>
-    ACTIONS.map((action) => `${resource}:${action}`),
-  );
+  return RESOURCES.flatMap((resource) => ACTIONS.map((action) => `${resource}:${action}`));
 }
 
-export function hasAllPermissions(
-  granted: string[],
-  required: string[],
-): boolean {
+export function isAdminRole(role: string | null | undefined): boolean {
+  return role === ADMIN_ROLE;
+}
+
+export function hasAllPermissions(granted: string[], required: string[]): boolean {
   const set = new Set(granted);
   return required.every((code) => set.has(code));
 }
 
-export async function listPermissionCodesForUser(
-  userId: string,
-): Promise<string[]> {
+export async function listPermissionCodesForUser(userId: string): Promise<string[]> {
   const db = getDb();
   const rows = await db
     .select({ code: permissions.code })

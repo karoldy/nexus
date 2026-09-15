@@ -43,9 +43,17 @@ export function HomePage() {
   return (
     <WorkspaceShell title={t('nav.account')}>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-        <Link className={buttonVariants()} to={paths.knowledges}>
-          {t('home.goKnowledges')}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link className={buttonVariants()} to={paths.knowledges}>
+            {t('home.goKnowledges')}
+          </Link>
+          <Link className={buttonVariants({ variant: 'outline' })} to={paths.questions}>
+            {t('home.goQuestions')}
+          </Link>
+          <Link className={buttonVariants({ variant: 'outline' })} to={paths.collections}>
+            {t('home.goCollections')}
+          </Link>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>{t('home.currentAccount')}</CardTitle>

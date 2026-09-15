@@ -1,8 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import {
-  CurrentPermissions,
-  CurrentUser,
-} from '../rbac/current-user.decorator';
+import { CurrentPermissions, CurrentUser } from '../rbac/current-user.decorator';
 import { PermissionGuard } from '../rbac/permission.guard';
 import { RequirePermissions } from '../rbac/require-permissions.decorator';
 
@@ -13,7 +10,7 @@ export class MeController {
   @RequirePermissions('knowledge:read')
   me(
     @CurrentUser()
-    user: { id: string; email: string; name: string },
+    user: { id: string; email: string; name: string; role: string | null },
     @CurrentPermissions() permissionCodes: string[],
   ) {
     return { user, permissionCodes };

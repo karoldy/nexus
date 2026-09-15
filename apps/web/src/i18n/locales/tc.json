@@ -33,7 +33,12 @@
     "passwordMismatch": "兩次密碼不一致",
     "currentPasswordMin": "目前密碼至少 8 位",
     "newPasswordMin": "新密碼至少 8 位",
-    "confirmNewPassword": "請再次輸入新密碼"
+    "confirmNewPassword": "請再次輸入新密碼",
+    "stemRequired": "請填寫題幹",
+    "optionMin": "選擇題至少兩個選項",
+    "optionText": "選項內容不能為空",
+    "answerRequired": "請填寫答案",
+    "blankRequired": "請填寫所有填空"
   },
   "auth": {
     "kicker": "NEXUS / AUTH",
@@ -73,6 +78,8 @@
   },
   "nav": {
     "knowledges": "知識",
+    "questions": "題目",
+    "collections": "題庫",
     "categories": "分類",
     "tags": "標籤",
     "account": "帳號"
@@ -91,7 +98,9 @@
     "savePassword": "儲存密碼",
     "updateFailed": "更新失敗",
     "passwordUpdated": "密碼已更新",
-    "goKnowledges": "進入知識列表"
+    "goKnowledges": "進入知識列表",
+    "goQuestions": "進入題目列表",
+    "goCollections": "進入題庫"
   },
   "knowledge": {
     "title": "知識",
@@ -122,5 +131,54 @@
     "create": "新建標籤",
     "edit": "編輯標籤",
     "empty": "暫無標籤"
+  },
+  "question": {
+    "title": "題目",
+    "create": "新建題目",
+    "edit": "編輯題目",
+    "search": "搜尋",
+    "published": "發佈狀態",
+    "all": "全部",
+    "publishedYes": "已發佈",
+    "draft": "草稿",
+    "empty": "暫無題目",
+    "type": "題型",
+    "stem": "題幹",
+    "options": "選項",
+    "answer": "答案",
+    "blanks": "填空答案",
+    "explanation": "解析",
+    "difficulty": "難度",
+    "difficultyValue": "難度 {{value}}",
+    "knowledges": "知識點",
+    "knowledgesHint": "僅已發佈題目可掛已發佈知識點",
+    "addOption": "新增選項",
+    "removeOption": "刪除",
+    "addBlank": "新增空",
+    "removeBlank": "刪除",
+    "true": "正確",
+    "false": "錯誤",
+    "types": {
+      "SINGLE_CHOICE": "單選",
+      "MULTIPLE_CHOICE": "多選",
+      "TRUE_FALSE": "判斷",
+      "SHORT_ANSWER": "簡答",
+      "FILL_BLANK": "填空"
+    }
+  },
+  "collection": {
+    "title": "題庫",
+    "create": "新建題集",
+    "edit": "編輯題集",
+    "search": "搜尋",
+    "published": "發佈狀態",
+    "all": "全部",
+    "publishedYes": "已發佈",
+    "draft": "草稿",
+    "empty": "暫無題集",
+    "description": "描述",
+    "questions": "收錄題目",
+    "questionsHint": "只能收錄已發佈題目，勾選順序即排序",
+    "noQuestions": "暫無可收錄的已發佈題目"
   }
 }

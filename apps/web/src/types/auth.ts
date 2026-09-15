@@ -2,6 +2,7 @@ export type AuthUser = {
   id: string;
   email: string;
   name: string;
+  role: string | null;
 };
 
 export type MePayload = {

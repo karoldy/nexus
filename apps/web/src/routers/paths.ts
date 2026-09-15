@@ -9,4 +9,10 @@ export const paths = {
   knowledgeEdit: (id: string) => `/knowledges/${id}`,
   categories: '/categories',
   tags: '/tags',
+  questions: '/questions',
+  questionNew: '/questions/new',
+  questionEdit: (id: string) => `/questions/${id}`,
+  collections: '/collections',
+  collectionNew: '/collections/new',
+  collectionEdit: (id: string) => `/collections/${id}`,
 } as const;

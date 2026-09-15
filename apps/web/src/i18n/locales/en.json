@@ -33,7 +33,12 @@
     "passwordMismatch": "Passwords do not match",
     "currentPasswordMin": "Current password must be at least 8 characters",
     "newPasswordMin": "New password must be at least 8 characters",
-    "confirmNewPassword": "Confirm the new password"
+    "confirmNewPassword": "Confirm the new password",
+    "stemRequired": "Stem is required",
+    "optionMin": "Choice questions need at least two options",
+    "optionText": "Option text cannot be empty",
+    "answerRequired": "Answer is required",
+    "blankRequired": "Fill every blank"
   },
   "auth": {
     "kicker": "NEXUS / AUTH",
@@ -73,6 +78,8 @@
   },
   "nav": {
     "knowledges": "Knowledge",
+    "questions": "Questions",
+    "collections": "Question banks",
     "categories": "Categories",
     "tags": "Tags",
     "account": "Account"
@@ -91,7 +98,9 @@
     "savePassword": "Save password",
     "updateFailed": "Update failed",
     "passwordUpdated": "Password updated",
-    "goKnowledges": "Open knowledge list"
+    "goKnowledges": "Open knowledge list",
+    "goQuestions": "Open questions",
+    "goCollections": "Open question banks"
   },
   "knowledge": {
     "title": "Knowledge",
@@ -122,5 +131,54 @@
     "create": "New tag",
     "edit": "Edit tag",
     "empty": "No tags yet"
+  },
+  "question": {
+    "title": "Questions",
+    "create": "New question",
+    "edit": "Edit question",
+    "search": "Search",
+    "published": "Publish state",
+    "all": "All",
+    "publishedYes": "Published",
+    "draft": "Draft",
+    "empty": "No questions yet",
+    "type": "Type",
+    "stem": "Stem",
+    "options": "Options",
+    "answer": "Answer",
+    "blanks": "Blanks",
+    "explanation": "Explanation",
+    "difficulty": "Difficulty",
+    "difficultyValue": "Difficulty {{value}}",
+    "knowledges": "Knowledge",
+    "knowledgesHint": "Only published questions can link published knowledge",
+    "addOption": "Add option",
+    "removeOption": "Remove",
+    "addBlank": "Add blank",
+    "removeBlank": "Remove",
+    "true": "True",
+    "false": "False",
+    "types": {
+      "SINGLE_CHOICE": "Single choice",
+      "MULTIPLE_CHOICE": "Multiple choice",
+      "TRUE_FALSE": "True / false",
+      "SHORT_ANSWER": "Short answer",
+      "FILL_BLANK": "Fill in the blank"
+    }
+  },
+  "collection": {
+    "title": "Question banks",
+    "create": "New collection",
+    "edit": "Edit collection",
+    "search": "Search",
+    "published": "Publish state",
+    "all": "All",
+    "publishedYes": "Published",
+    "draft": "Draft",
+    "empty": "No collections yet",
+    "description": "Description",
+    "questions": "Questions",
+    "questionsHint": "Only published questions can be added; check order is sort order",
+    "noQuestions": "No published questions to add"
   }
 }

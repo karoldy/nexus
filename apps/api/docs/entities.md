@@ -102,7 +102,7 @@ erDiagram
 
 部分唯一索引：`(code) WHERE deleted_at IS NULL`。
 
-初始权限：`knowledge`、`content`、`question`、`exam`、`task` 各自 `read/create/update/delete`。内置权限不允许软删除。
+初始权限：`knowledge`、`content`、`question`、`exam`、`task` 各自 `read/create/update/delete`。内置权限不允许软删除。`user.role === 'admin'`（Better Auth 角色字段）时 `PermissionGuard` 跳过权限码校验。
 
 ### user_roles
 

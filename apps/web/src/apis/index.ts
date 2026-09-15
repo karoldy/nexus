@@ -26,3 +26,17 @@ export {
   updateKnowledge,
 } from './knowledge';
 export { createTag, deleteTag, listTags, updateTag } from './tag';
+export {
+  createQuestion,
+  deleteQuestion,
+  fetchQuestion,
+  listQuestions,
+  updateQuestion,
+} from './question';
+export {
+  createCollection,
+  deleteCollection,
+  fetchCollection,
+  listCollections,
+  updateCollection,
+} from './collection';

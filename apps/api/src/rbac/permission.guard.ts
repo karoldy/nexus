@@ -10,12 +10,12 @@ import type { Request } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../auth/auth';
 import { bearerToken, loadActiveUser, looksLikeJwt, verifyAccessJwt } from '../auth/access-jwt';
-import { hasAllPermissions } from './permissions';
+import { hasAllPermissions, isAdminRole } from './permissions';
 import { PERMISSIONS_KEY } from './require-permissions.decorator';
 import { RbacService } from './rbac.service';
 
 export type AuthedRequest = Request & {
-  authUser?: { id: string; email: string; name: string };
+  authUser?: { id: string; email: string; name: string; role: string | null };
   permissionCodes?: string[];
 };
 
@@ -43,7 +43,7 @@ export class PermissionGuard implements CanActivate {
     request.authUser = user;
     request.permissionCodes = codes;
 
-    if (required.length > 0 && !hasAllPermissions(codes, required)) {
+    if (required.length > 0 && !isAdminRole(user.role) && !hasAllPermissions(codes, required)) {
       throw new ForbiddenException();
     }
 

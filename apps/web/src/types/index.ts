@@ -5,3 +5,18 @@ export { APP_LANGUAGES } from './i18n';
 export type { ApiEnvelope, PageQuery, Paginated } from './http';
 export type { Knowledge, KnowledgeListParams, KnowledgePayload } from './knowledge';
 export type { Tag, TagPayload } from './tag';
+export type {
+  Question,
+  QuestionKnowledgeRef,
+  QuestionListParams,
+  QuestionOption,
+  QuestionPayload,
+  QuestionType,
+} from './question';
+export { QUESTION_TYPES } from './question';
+export type {
+  Collection,
+  CollectionListParams,
+  CollectionPayload,
+  CollectionQuestionRef,
+} from './collection';

@@ -9,6 +9,7 @@ export type ActiveUser = {
   id: string;
   email: string;
   name: string;
+  role: string | null;
 };
 
 export function looksLikeJwt(token: string): boolean {
@@ -71,5 +72,5 @@ export async function loadActiveUser(userId: string): Promise<ActiveUser | null>
   if (found.banned && (!found.banExpires || found.banExpires.getTime() > Date.now())) {
     return null;
   }
-  return { id: found.id, email: found.email, name: found.name };
+  return { id: found.id, email: found.email, name: found.name, role: found.role ?? null };
 }
