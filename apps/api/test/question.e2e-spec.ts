@@ -492,6 +492,61 @@ describe.skipIf(!hasDatabase)('question e2e', () => {
       .expect(404);
   });
 
+  it('returns 404 for another owner published knowledge, question, and collection', async () => {
+    const otherKnowledge = await request(app.getHttpServer())
+      .post('/api/knowledges')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send({
+        title: `Other published knowledge ${suffix}`,
+        published: true,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        type: 'TRUE_FALSE',
+        stem: `Attach other knowledge ${suffix}`,
+        answer: { value: true },
+        published: true,
+        knowledgeIds: [otherKnowledge.body.data.id],
+      })
+      .expect(404);
+
+    const otherQuestion = await request(app.getHttpServer())
+      .post('/api/questions')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send({
+        type: 'TRUE_FALSE',
+        stem: `Other published question ${suffix}`,
+        answer: { value: true },
+        published: true,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: `Steal other question ${suffix}`,
+        questionIds: [otherQuestion.body.data.id],
+      })
+      .expect(404);
+
+    const otherCollection = await request(app.getHttpServer())
+      .post('/api/collections')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send({ name: `Other collection ${suffix}` })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get('/api/questions')
+      .query({ collectionId: otherCollection.body.data.id })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(404);
+  });
+
   it('lists questions belonging to a collectionId and 404s when the collection is missing', async () => {
     const member = await createPublishedQuestion(`In collection ${suffix}`);
     const outsider = await createPublishedQuestion(`Outside collection ${suffix}`);

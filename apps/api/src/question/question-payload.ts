@@ -63,21 +63,35 @@ function normalizeChoiceOptions(
     throw new Error('choice questions require at least 2 options');
   }
 
+  const seenIds = new Set<string>();
+
   return options.map((option) => {
     const text = option.text.trim();
     if (!text) {
       throw new Error('option text must not be empty');
     }
 
+    let id: string;
     if (option.id !== undefined) {
       if (!isValidUuid(option.id)) {
         throw new Error('option id must be a valid UUID');
       }
-      return { id: option.id, text };
+      id = option.id;
+    } else {
+      id = crypto.randomUUID();
     }
 
-    return { id: crypto.randomUUID(), text };
+    if (seenIds.has(id)) {
+      throw new Error('duplicate option ids');
+    }
+    seenIds.add(id);
+
+    return { id, text };
   });
+}
+
+function isIndexInRange(value: unknown, length: number): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < length;
 }
 
 function assertNoOptions(options: QuestionOptionInput[] | null | undefined): void {
@@ -90,53 +104,95 @@ function normalizeSingleChoiceAnswer(
   answer: unknown,
   options: NormalizedOption[],
 ): Record<string, unknown> {
-  if (typeof answer !== 'object' || answer === null || !('optionId' in answer)) {
+  if (typeof answer !== 'object' || answer === null) {
     throw new Error('single choice answer must include optionId');
   }
 
-  const optionId = (answer as { optionId: unknown }).optionId;
-  if (typeof optionId !== 'string') {
-    throw new Error('single choice answer must include optionId');
+  const record = answer as { optionId?: unknown; optionIndex?: unknown };
+
+  if (record.optionId !== undefined) {
+    const optionId = record.optionId;
+    if (typeof optionId !== 'string') {
+      throw new Error('single choice answer must include optionId');
+    }
+
+    const optionIds = new Set(options.map((option) => option.id));
+    if (!optionIds.has(optionId)) {
+      throw new Error('single choice answer optionId must match an option');
+    }
+
+    return { optionId };
   }
 
-  const optionIds = new Set(options.map((option) => option.id));
-  if (!optionIds.has(optionId)) {
-    throw new Error('single choice answer optionId must match an option');
+  if (record.optionIndex !== undefined) {
+    if (!isIndexInRange(record.optionIndex, options.length)) {
+      throw new Error('single choice answer optionIndex must be an integer in range');
+    }
+    return { optionId: options[record.optionIndex].id };
   }
 
-  return { optionId };
+  throw new Error('single choice answer must include optionId');
 }
 
 function normalizeMultipleChoiceAnswer(
   answer: unknown,
   options: NormalizedOption[],
 ): Record<string, unknown> {
-  if (typeof answer !== 'object' || answer === null || !('optionIds' in answer)) {
+  if (typeof answer !== 'object' || answer === null) {
     throw new Error('multiple choice answer must include optionIds');
   }
 
-  const optionIdsInput = (answer as { optionIds: unknown }).optionIds;
-  if (!Array.isArray(optionIdsInput) || optionIdsInput.length === 0) {
-    throw new Error('multiple choice answer must include non-empty optionIds');
+  const record = answer as { optionIds?: unknown; optionIndexes?: unknown };
+
+  if (record.optionIds !== undefined) {
+    const optionIdsInput = record.optionIds;
+    if (!Array.isArray(optionIdsInput) || optionIdsInput.length === 0) {
+      throw new Error('multiple choice answer must include non-empty optionIds');
+    }
+
+    const validOptionIds = new Set(options.map((option) => option.id));
+    const normalizedIds: string[] = [];
+
+    for (const id of optionIdsInput) {
+      if (typeof id !== 'string') {
+        throw new Error('multiple choice optionIds must be strings');
+      }
+      if (!validOptionIds.has(id)) {
+        throw new Error('multiple choice optionIds must match options');
+      }
+      if (normalizedIds.includes(id)) {
+        throw new Error('multiple choice optionIds must be unique');
+      }
+      normalizedIds.push(id);
+    }
+
+    return { optionIds: normalizedIds };
   }
 
-  const validOptionIds = new Set(options.map((option) => option.id));
-  const normalizedIds: string[] = [];
+  if (record.optionIndexes !== undefined) {
+    const optionIndexes = record.optionIndexes;
+    if (!Array.isArray(optionIndexes) || optionIndexes.length === 0) {
+      throw new Error('multiple choice answer must include non-empty optionIndexes');
+    }
 
-  for (const id of optionIdsInput) {
-    if (typeof id !== 'string') {
-      throw new Error('multiple choice optionIds must be strings');
+    const normalizedIds: string[] = [];
+    const seenIndexes = new Set<number>();
+
+    for (const index of optionIndexes) {
+      if (!isIndexInRange(index, options.length)) {
+        throw new Error('multiple choice optionIndexes must be unique integers in range');
+      }
+      if (seenIndexes.has(index)) {
+        throw new Error('multiple choice optionIndexes must be unique');
+      }
+      seenIndexes.add(index);
+      normalizedIds.push(options[index].id);
     }
-    if (!validOptionIds.has(id)) {
-      throw new Error('multiple choice optionIds must match options');
-    }
-    if (normalizedIds.includes(id)) {
-      throw new Error('multiple choice optionIds must be unique');
-    }
-    normalizedIds.push(id);
+
+    return { optionIds: normalizedIds };
   }
 
-  return { optionIds: normalizedIds };
+  throw new Error('multiple choice answer must include optionIds');
 }
 
 function normalizeTrueFalseAnswer(answer: unknown): Record<string, unknown> {

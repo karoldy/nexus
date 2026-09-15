@@ -74,8 +74,9 @@ export class CollectionService {
     const questionIds = dto.questionIds ?? [];
     await this.assertPublishedQuestions(ownerId, questionIds);
 
+    let created: CollectionRow;
     try {
-      const [created] = await this.db
+      const [row] = await this.db
         .insert(collections)
         .values({
           id: crypto.randomUUID(),
@@ -85,14 +86,16 @@ export class CollectionService {
           published: dto.published ?? false,
         })
         .returning();
-      await this.syncQuestions(created.id, questionIds);
-      return this.getOwned(ownerId, created.id);
+      created = row;
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException('Collection name already exists');
       }
       throw error;
     }
+
+    await this.syncQuestions(created.id, questionIds);
+    return this.getOwned(ownerId, created.id);
   }
 
   async update(ownerId: string, id: string, dto: UpdateCollectionDto) {
