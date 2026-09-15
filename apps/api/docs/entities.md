@@ -4,16 +4,16 @@
 
 ## 约定
 
-| 项 | 规则 |
-|----|------|
-| 主键 | `id uuid`，应用侧生成 |
-| 审计 | `created_at`、`updated_at`；关联表同样保留 `updated_at`（软删除会改这一列） |
-| 删除 | 软删除：`deleted_at timestamptz`，空表示未删。默认查询过滤 `deleted_at IS NULL`。唯一约束做成部分索引（仅未删行） |
-| 状态 | 启用/禁用用 `boolean`（角色、权限、业务实体）。用户停用走 Better Auth `banned`，不用 `status` 表示删除 |
-| 进度 | 工作流用独立字段 `progress`（考试作答、任务），不占用 `status` |
-| 归属 | 业务行用 `owner_id → user.id`（Better Auth 的 `user` 表）；管理员可跨用户 |
-| 权限码 | `resource:action`，如 `knowledge:create` |
-| JSON | PostgreSQL `jsonb`，用于选项、答案、附件元数据 |
+| 项     | 规则                                                                                                              |
+| ------ | ----------------------------------------------------------------------------------------------------------------- |
+| 主键   | `id uuid`，应用侧生成                                                                                             |
+| 审计   | `created_at`、`updated_at`；关联表同样保留 `updated_at`（软删除会改这一列）                                       |
+| 删除   | 软删除：`deleted_at timestamptz`，空表示未删。默认查询过滤 `deleted_at IS NULL`。唯一约束做成部分索引（仅未删行） |
+| 状态   | 启用/禁用用 `boolean`（角色、权限、业务实体）。用户停用走 Better Auth `banned`，不用 `status` 表示删除            |
+| 进度   | 工作流用独立字段 `progress`（考试作答、任务），不占用 `status`                                                    |
+| 归属   | 业务行用 `owner_id → user.id`（Better Auth 的 `user` 表）；管理员可跨用户                                         |
+| 权限码 | `resource:action`，如 `knowledge:create`                                                                          |
+| JSON   | PostgreSQL `jsonb`，用于选项、答案、附件元数据                                                                    |
 
 ---
 
@@ -66,21 +66,23 @@ erDiagram
 
 ## 1. Auth / RBAC
 
-认证交给 **Better Auth**（`user` / `session` / `account` / `verification`）。角色权限是我们自己的表，不塞进 Better Auth。
+认证交给 **Better Auth**（`user` / `session` / `account` / `verification` / `jwks`）。角色权限是我们自己的表，不塞进 Better Auth。
+
+会话（Cookie 或 `set-auth-token` Bearer）有效期 **7 天**，用来换 access JWT。access JWT 有效期 **10 小时**（`GET /api/auth/token`）。业务接口优先认 JWT，否则走 session。
 
 软删除一律用 `deleted_at`，不用 `status`。角色、权限上的 `status` 只表示启用/禁用。
 
 ### roles
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| code | varchar(50) | not null | `admin` / `user` |
-| name | varchar(100) | not null | |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用（不是删除） |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | 非空即软删除 |
+| 字段       | 类型         | 约束                   | 说明                                  |
+| ---------- | ------------ | ---------------------- | ------------------------------------- |
+| id         | uuid         | PK                     |                                       |
+| code       | varchar(50)  | not null               | `admin` / `user`                      |
+| name       | varchar(100) | not null               |                                       |
+| status     | boolean      | not null, default true | `true` 启用，`false` 禁用（不是删除） |
+| created_at | timestamptz  | not null               |                                       |
+| updated_at | timestamptz  | not null               |                                       |
+| deleted_at | timestamptz  | nullable               | 非空即软删除                          |
 
 部分唯一索引：`(code) WHERE deleted_at IS NULL`。
 
@@ -88,15 +90,15 @@ erDiagram
 
 ### permissions
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| code | varchar(100) | not null | `knowledge:create` |
-| name | varchar(100) | not null | |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用（不是删除） |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | 非空即软删除 |
+| 字段       | 类型         | 约束                   | 说明                                  |
+| ---------- | ------------ | ---------------------- | ------------------------------------- |
+| id         | uuid         | PK                     |                                       |
+| code       | varchar(100) | not null               | `knowledge:create`                    |
+| name       | varchar(100) | not null               |                                       |
+| status     | boolean      | not null, default true | `true` 启用，`false` 禁用（不是删除） |
+| created_at | timestamptz  | not null               |                                       |
+| updated_at | timestamptz  | not null               |                                       |
+| deleted_at | timestamptz  | nullable               | 非空即软删除                          |
 
 部分唯一索引：`(code) WHERE deleted_at IS NULL`。
 
@@ -106,14 +108,14 @@ erDiagram
 
 中间表自带主键，解绑走 `deleted_at`，便于再绑定。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| user_id | uuid | FK user, not null | Better Auth `user.id` |
-| role_id | uuid | FK roles, not null | |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | 非空即已解绑 |
+| 字段       | 类型        | 约束               | 说明                  |
+| ---------- | ----------- | ------------------ | --------------------- |
+| id         | uuid        | PK                 |                       |
+| user_id    | uuid        | FK user, not null  | Better Auth `user.id` |
+| role_id    | uuid        | FK roles, not null |                       |
+| created_at | timestamptz | not null           |                       |
+| updated_at | timestamptz | not null           |                       |
+| deleted_at | timestamptz | nullable           | 非空即已解绑          |
 
 部分唯一索引：`(user_id, role_id) WHERE deleted_at IS NULL`。
 
@@ -121,14 +123,14 @@ erDiagram
 
 ### role_permissions
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| role_id | uuid | FK roles, not null | |
-| permission_id | uuid | FK permissions, not null | |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | 非空即已收回该权限 |
+| 字段          | 类型        | 约束                     | 说明               |
+| ------------- | ----------- | ------------------------ | ------------------ |
+| id            | uuid        | PK                       |                    |
+| role_id       | uuid        | FK roles, not null       |                    |
+| permission_id | uuid        | FK permissions, not null |                    |
+| created_at    | timestamptz | not null                 |                    |
+| updated_at    | timestamptz | not null                 |                    |
+| deleted_at    | timestamptz | nullable                 | 非空即已收回该权限 |
 
 部分唯一索引：`(role_id, permission_id) WHERE deleted_at IS NULL`。
 
@@ -138,34 +140,35 @@ Better Auth 核心表，不另建用户表。id 配置为 uuid，与全局约定
 
 库内置列不改语义。我们只追加软删除，以及 Admin 插件的停用字段。
 
-| 字段 | 类型 | 来源 | 说明 |
-|------|------|------|------|
-| id | uuid | Better Auth | PK |
-| name | varchar | Better Auth | 显示名 |
-| email | varchar | Better Auth | 登录名 |
-| email_verified | boolean | Better Auth | 邮箱是否已验证，不再单独建 `email_verified_at` |
-| image | varchar | Better Auth | 头像，可空 |
-| created_at | timestamptz | Better Auth | |
-| updated_at | timestamptz | Better Auth | |
-| deleted_at | timestamptz | additionalFields | 软删除；空表示未删 |
-| banned | boolean | admin 插件 | 停用账号，仍占邮箱 |
-| ban_reason | text | admin 插件 | 可空 |
-| ban_expires | timestamptz | admin 插件 | 可空；空表示永久停用 |
-| role | text | admin 插件 | Better Auth 内置角色字段，与自建 RBAC 分开 |
+| 字段           | 类型        | 来源             | 说明                                           |
+| -------------- | ----------- | ---------------- | ---------------------------------------------- |
+| id             | uuid        | Better Auth      | PK                                             |
+| name           | varchar     | Better Auth      | 显示名                                         |
+| email          | varchar     | Better Auth      | 登录名                                         |
+| email_verified | boolean     | Better Auth      | 邮箱是否已验证，不再单独建 `email_verified_at` |
+| image          | varchar     | Better Auth      | 头像，可空                                     |
+| created_at     | timestamptz | Better Auth      |                                                |
+| updated_at     | timestamptz | Better Auth      |                                                |
+| deleted_at     | timestamptz | additionalFields | 软删除；空表示未删                             |
+| banned         | boolean     | admin 插件       | 停用账号，仍占邮箱                             |
+| ban_reason     | text        | admin 插件       | 可空                                           |
+| ban_expires    | timestamptz | admin 插件       | 可空；空表示永久停用                           |
+| role           | text        | admin 插件       | Better Auth 内置角色字段，与自建 RBAC 分开     |
 
 部分唯一索引：`(email) WHERE deleted_at IS NULL`（Better Auth 默认 email unique 要改成这条，否则注销后无法再用同一邮箱注册）。
 
 登录：`deleted_at IS NULL` 且未 `banned`（或 `ban_expires` 已过）。软删除不改业务表的 `owner_id`。
 
-Better Auth 的 `session`、`account`、`verification` 由库维护，不做软删除：注销用户时撤 session；解绑走库的 account 删除，不自建 `oauth_accounts`。
+Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，不做软删除：注销用户时撤 session；解绑走库的 account 删除，不自建 `oauth_accounts`。
 
-### session / account / verification
+### session / account / verification / jwks
 
-| 表 | 职责 |
-|----|------|
-| session | 登录会话；用户软删除时由 Better Auth 撤销 |
-| account | 密码哈希与 OAuth 绑定（`provider_id` + `account_id`） |
-| verification | 邮箱验证、重置密码等一次性凭证 |
+| 表           | 职责                                                  |
+| ------------ | ----------------------------------------------------- |
+| session      | 登录会话（7 天）；用户软删除时由 Better Auth 撤销     |
+| account      | 密码哈希与 OAuth 绑定（`provider_id` + `account_id`） |
+| verification | 邮箱验证、重置密码等一次性凭证                        |
+| jwks         | JWT 插件密钥；签发 10 小时 access token               |
 
 ---
 
@@ -177,19 +180,19 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 树形分类，`parent_id` 自关联，不拆 SubCategory。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| parent_id | uuid | FK categories, nullable | 根节点为空；不可指向已软删除节点 |
-| name | varchar(100) | not null | |
-| slug | varchar(120) | not null | |
-| description | text | nullable | |
-| sort | int | not null, default 0 | 同级排序，越小越前 |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段        | 类型         | 约束                    | 说明                             |
+| ----------- | ------------ | ----------------------- | -------------------------------- |
+| id          | uuid         | PK                      |                                  |
+| owner_id    | uuid         | FK user, not null       |                                  |
+| parent_id   | uuid         | FK categories, nullable | 根节点为空；不可指向已软删除节点 |
+| name        | varchar(100) | not null                |                                  |
+| slug        | varchar(120) | not null                |                                  |
+| description | text         | nullable                |                                  |
+| sort        | int          | not null, default 0     | 同级排序，越小越前               |
+| status      | boolean      | not null, default true  | `true` 启用，`false` 禁用        |
+| created_at  | timestamptz  | not null                |                                  |
+| updated_at  | timestamptz  | not null                |                                  |
+| deleted_at  | timestamptz  | nullable                |                                  |
 
 部分唯一索引：`(owner_id, parent_id, slug) WHERE deleted_at IS NULL`。`parent_id` 为空时用 `COALESCE(parent_id, '00000000-0000-0000-0000-000000000000')` 或等价部分索引覆盖根节点。
 
@@ -199,15 +202,15 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 横向特征，如 Hook、性能、设计模式。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| name | varchar(50) | not null | |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段       | 类型        | 约束                   | 说明                      |
+| ---------- | ----------- | ---------------------- | ------------------------- |
+| id         | uuid        | PK                     |                           |
+| owner_id   | uuid        | FK user, not null      |                           |
+| name       | varchar(50) | not null               |                           |
+| status     | boolean     | not null, default true | `true` 启用，`false` 禁用 |
+| created_at | timestamptz | not null               |                           |
+| updated_at | timestamptz | not null               |                           |
+| deleted_at | timestamptz | nullable               |                           |
 
 部分唯一索引：`(owner_id, name) WHERE deleted_at IS NULL`。
 
@@ -215,19 +218,19 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 知识点本身。正文可空：允许先建节点，再靠 Content 承载材料。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| category_id | uuid | FK categories, nullable | 可指向已软删除分类，展示时当未分类 |
-| title | varchar(200) | not null | |
-| summary | text | nullable | |
-| body | text | nullable | 可选的要点正文 |
-| published | boolean | not null, default false | `false` 草稿，`true` 已发布 |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段        | 类型         | 约束                    | 说明                               |
+| ----------- | ------------ | ----------------------- | ---------------------------------- |
+| id          | uuid         | PK                      |                                    |
+| owner_id    | uuid         | FK user, not null       |                                    |
+| category_id | uuid         | FK categories, nullable | 可指向已软删除分类，展示时当未分类 |
+| title       | varchar(200) | not null                |                                    |
+| summary     | text         | nullable                |                                    |
+| body        | text         | nullable                | 可选的要点正文                     |
+| published   | boolean      | not null, default false | `false` 草稿，`true` 已发布        |
+| status      | boolean      | not null, default true  | `true` 启用，`false` 禁用          |
+| created_at  | timestamptz  | not null                |                                    |
+| updated_at  | timestamptz  | not null                |                                    |
+| deleted_at  | timestamptz  | nullable                |                                    |
 
 默认列表：`deleted_at IS NULL AND status = true AND published = true`。
 
@@ -237,14 +240,14 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 中间表自带主键，摘标签为软删除。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| knowledge_id | uuid | FK knowledges, not null | |
-| tag_id | uuid | FK tags, not null | |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段         | 类型        | 约束                    | 说明 |
+| ------------ | ----------- | ----------------------- | ---- |
+| id           | uuid        | PK                      |      |
+| knowledge_id | uuid        | FK knowledges, not null |      |
+| tag_id       | uuid        | FK tags, not null       |      |
+| created_at   | timestamptz | not null                |      |
+| updated_at   | timestamptz | not null                |      |
+| deleted_at   | timestamptz | nullable                |      |
 
 部分唯一索引：`(knowledge_id, tag_id) WHERE deleted_at IS NULL`。
 
@@ -252,26 +255,26 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 有向关系。同一对节点同一类型在未删除行中只允许一条。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | 冗余，便于按用户查询 |
-| source_id | uuid | FK knowledges, not null | |
-| target_id | uuid | FK knowledges, not null | |
-| relation_type | varchar(30) | not null | 见下表 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段          | 类型        | 约束                    | 说明                 |
+| ------------- | ----------- | ----------------------- | -------------------- |
+| id            | uuid        | PK                      |                      |
+| owner_id      | uuid        | FK user, not null       | 冗余，便于按用户查询 |
+| source_id     | uuid        | FK knowledges, not null |                      |
+| target_id     | uuid        | FK knowledges, not null |                      |
+| relation_type | varchar(30) | not null                | 见下表               |
+| created_at    | timestamptz | not null                |                      |
+| updated_at    | timestamptz | not null                |                      |
+| deleted_at    | timestamptz | nullable                |                      |
 
 部分唯一索引：`(source_id, target_id, relation_type) WHERE deleted_at IS NULL`。检查：`source_id <> target_id`。两端知识点已软删除时，关系仍保留行，默认查询不可见。
 
-| relation_type | 含义 |
-|---------------|------|
-| RELATED | 相关 |
-| PREREQUISITE | source 的前置是 target |
-| DERIVED | source 由 target 派生 |
-| EXTENDS | source 扩展 target |
-| CONTRASTS | 对比 |
+| relation_type | 含义                   |
+| ------------- | ---------------------- |
+| RELATED       | 相关                   |
+| PREREQUISITE  | source 的前置是 target |
+| DERIVED       | source 由 target 派生  |
+| EXTENDS       | source 扩展 target     |
+| CONTRASTS     | 对比                   |
 
 ---
 
@@ -283,24 +286,24 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 知识载体。一张表 + `type` 区分形态，避免 Note / Article / Document / Resource 四套平行结构。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| type | varchar(20) | not null | `NOTE` / `ARTICLE` / `DOCUMENT` / `RESOURCE` |
-| title | varchar(200) | not null | |
-| body | text | nullable | NOTE / ARTICLE 正文 |
-| summary | text | nullable | 主要用于 ARTICLE |
-| url | varchar(2000) | nullable | RESOURCE 外链 |
-| file_key | varchar(500) | nullable | DOCUMENT 对象存储 key |
-| mime_type | varchar(100) | nullable | DOCUMENT |
-| file_size | bigint | nullable | 字节 |
-| metadata | jsonb | nullable | 额外信息 |
-| published | boolean | not null, default false | `false` 草稿，`true` 已发布 |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段       | 类型          | 约束                    | 说明                                         |
+| ---------- | ------------- | ----------------------- | -------------------------------------------- |
+| id         | uuid          | PK                      |                                              |
+| owner_id   | uuid          | FK user, not null       |                                              |
+| type       | varchar(20)   | not null                | `NOTE` / `ARTICLE` / `DOCUMENT` / `RESOURCE` |
+| title      | varchar(200)  | not null                |                                              |
+| body       | text          | nullable                | NOTE / ARTICLE 正文                          |
+| summary    | text          | nullable                | 主要用于 ARTICLE                             |
+| url        | varchar(2000) | nullable                | RESOURCE 外链                                |
+| file_key   | varchar(500)  | nullable                | DOCUMENT 对象存储 key                        |
+| mime_type  | varchar(100)  | nullable                | DOCUMENT                                     |
+| file_size  | bigint        | nullable                | 字节                                         |
+| metadata   | jsonb         | nullable                | 额外信息                                     |
+| published  | boolean       | not null, default false | `false` 草稿，`true` 已发布                  |
+| status     | boolean       | not null, default true  | `true` 启用，`false` 禁用                    |
+| created_at | timestamptz   | not null                |                                              |
+| updated_at | timestamptz   | not null                |                                              |
+| deleted_at | timestamptz   | nullable                |                                              |
 
 默认列表：`deleted_at IS NULL AND status = true AND published = true`。
 
@@ -317,14 +320,14 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 一条内容可挂多个知识点。解绑为软删除。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| content_id | uuid | FK contents, not null | |
-| knowledge_id | uuid | FK knowledges, not null | |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段         | 类型        | 约束                    | 说明 |
+| ------------ | ----------- | ----------------------- | ---- |
+| id           | uuid        | PK                      |      |
+| content_id   | uuid        | FK contents, not null   |      |
+| knowledge_id | uuid        | FK knowledges, not null |      |
+| created_at   | timestamptz | not null                |      |
+| updated_at   | timestamptz | not null                |      |
+| deleted_at   | timestamptz | nullable                |      |
 
 部分唯一索引：`(content_id, knowledge_id) WHERE deleted_at IS NULL`。
 
@@ -338,44 +341,44 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 ### questions
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| type | varchar(30) | not null | 见下表 |
-| stem | text | not null | 题干 |
-| options | jsonb | nullable | 选择题选项数组 `[{id, text}]` |
-| answer | jsonb | not null | 标准答案，结构随 type |
-| explanation | text | nullable | 解析 |
-| difficulty | int | not null, default 3 | 1–5 |
-| published | boolean | not null, default false | `false` 草稿，`true` 已发布 |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段        | 类型        | 约束                    | 说明                          |
+| ----------- | ----------- | ----------------------- | ----------------------------- |
+| id          | uuid        | PK                      |                               |
+| owner_id    | uuid        | FK user, not null       |                               |
+| type        | varchar(30) | not null                | 见下表                        |
+| stem        | text        | not null                | 题干                          |
+| options     | jsonb       | nullable                | 选择题选项数组 `[{id, text}]` |
+| answer      | jsonb       | not null                | 标准答案，结构随 type         |
+| explanation | text        | nullable                | 解析                          |
+| difficulty  | int         | not null, default 3     | 1–5                           |
+| published   | boolean     | not null, default false | `false` 草稿，`true` 已发布   |
+| status      | boolean     | not null, default true  | `true` 启用，`false` 禁用     |
+| created_at  | timestamptz | not null                |                               |
+| updated_at  | timestamptz | not null                |                               |
+| deleted_at  | timestamptz | nullable                |                               |
 
 默认题库列表：`deleted_at IS NULL AND status = true AND published = true`。组卷、加入题集时只允许未删除且启用且已发布的题。
 
-| type | options | answer |
-|------|---------|--------|
-| SINGLE_CHOICE | 必填 | `{ "optionId": "..." }` |
-| MULTIPLE_CHOICE | 必填 | `{ "optionIds": ["..."] }` |
-| TRUE_FALSE | 空 | `{ "value": true }` |
-| SHORT_ANSWER | 空 | `{ "text": "..." }` |
-| FILL_BLANK | 空 | `{ "blanks": ["..."] }` |
+| type            | options | answer                     |
+| --------------- | ------- | -------------------------- |
+| SINGLE_CHOICE   | 必填    | `{ "optionId": "..." }`    |
+| MULTIPLE_CHOICE | 必填    | `{ "optionIds": ["..."] }` |
+| TRUE_FALSE      | 空      | `{ "value": true }`        |
+| SHORT_ANSWER    | 空      | `{ "text": "..." }`        |
+| FILL_BLANK      | 空      | `{ "blanks": ["..."] }`    |
 
 ### question_knowledges
 
 题目用来验证哪些知识点。解绑为软删除。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| question_id | uuid | FK questions, not null | |
-| knowledge_id | uuid | FK knowledges, not null | |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段         | 类型        | 约束                    | 说明 |
+| ------------ | ----------- | ----------------------- | ---- |
+| id           | uuid        | PK                      |      |
+| question_id  | uuid        | FK questions, not null  |      |
+| knowledge_id | uuid        | FK knowledges, not null |      |
+| created_at   | timestamptz | not null                |      |
+| updated_at   | timestamptz | not null                |      |
+| deleted_at   | timestamptz | nullable                |      |
 
 部分唯一索引：`(question_id, knowledge_id) WHERE deleted_at IS NULL`。挂接时两端必须同一 `owner_id` 且均未删除。
 
@@ -383,17 +386,17 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 题集。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| name | varchar(200) | not null | |
-| description | text | nullable | |
-| published | boolean | not null, default false | `false` 草稿，`true` 已发布 |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段        | 类型         | 约束                    | 说明                        |
+| ----------- | ------------ | ----------------------- | --------------------------- |
+| id          | uuid         | PK                      |                             |
+| owner_id    | uuid         | FK user, not null       |                             |
+| name        | varchar(200) | not null                |                             |
+| description | text         | nullable                |                             |
+| published   | boolean      | not null, default false | `false` 草稿，`true` 已发布 |
+| status      | boolean      | not null, default true  | `true` 启用，`false` 禁用   |
+| created_at  | timestamptz  | not null                |                             |
+| updated_at  | timestamptz  | not null                |                             |
+| deleted_at  | timestamptz  | nullable                |                             |
 
 默认列表：`deleted_at IS NULL AND status = true AND published = true`。
 
@@ -401,15 +404,15 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 从题集移除题目为软删除。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| collection_id | uuid | FK collections, not null | |
-| question_id | uuid | FK questions, not null | |
-| sort | int | not null, default 0 | |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段          | 类型        | 约束                     | 说明 |
+| ------------- | ----------- | ------------------------ | ---- |
+| id            | uuid        | PK                       |      |
+| collection_id | uuid        | FK collections, not null |      |
+| question_id   | uuid        | FK questions, not null   |      |
+| sort          | int         | not null, default 0      |      |
+| created_at    | timestamptz | not null                 |      |
+| updated_at    | timestamptz | not null                 |      |
+| deleted_at    | timestamptz | nullable                 |      |
 
 部分唯一索引：`(collection_id, question_id) WHERE deleted_at IS NULL`。
 
@@ -425,18 +428,18 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 ### exams
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| title | varchar(200) | not null | |
-| description | text | nullable | |
-| duration_seconds | int | nullable | 空表示不限时 |
-| published | boolean | not null, default false | `false` 草稿，`true` 已发布 |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段             | 类型         | 约束                    | 说明                        |
+| ---------------- | ------------ | ----------------------- | --------------------------- |
+| id               | uuid         | PK                      |                             |
+| owner_id         | uuid         | FK user, not null       |                             |
+| title            | varchar(200) | not null                |                             |
+| description      | text         | nullable                |                             |
+| duration_seconds | int          | nullable                | 空表示不限时                |
+| published        | boolean      | not null, default false | `false` 草稿，`true` 已发布 |
+| status           | boolean      | not null, default true  | `true` 启用，`false` 禁用   |
+| created_at       | timestamptz  | not null                |                             |
+| updated_at       | timestamptz  | not null                |                             |
+| deleted_at       | timestamptz  | nullable                |                             |
 
 默认可考列表：`deleted_at IS NULL AND status = true AND published = true`。软删除试卷不删作答记录。
 
@@ -444,16 +447,16 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 从试卷移除题目为软删除。已有作答记录时仍可下架题目，历史答案靠快照。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| exam_id | uuid | FK exams, not null | |
-| question_id | uuid | FK questions, not null | |
-| sort | int | not null, default 0 | |
-| score | numeric(8,2) | not null, default 1 | 本题分值 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段        | 类型         | 约束                   | 说明     |
+| ----------- | ------------ | ---------------------- | -------- |
+| id          | uuid         | PK                     |          |
+| exam_id     | uuid         | FK exams, not null     |          |
+| question_id | uuid         | FK questions, not null |          |
+| sort        | int          | not null, default 0    |          |
+| score       | numeric(8,2) | not null, default 1    | 本题分值 |
+| created_at  | timestamptz  | not null               |          |
+| updated_at  | timestamptz  | not null               |          |
+| deleted_at  | timestamptz  | nullable               |          |
 
 部分唯一索引：`(exam_id, question_id) WHERE deleted_at IS NULL`。组卷时题目须未删除、已启用、已发布。
 
@@ -461,39 +464,39 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 一次作答。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| exam_id | uuid | FK exams, not null | |
-| user_id | uuid | FK user, not null | 作答人 |
-| progress | varchar(20) | not null | `IN_PROGRESS` / `SUBMITTED` / `TIMEOUT` |
-| status | boolean | not null, default true | `true` 计入成绩，`false` 作废（重考前作废旧卷） |
-| started_at | timestamptz | not null | |
-| submitted_at | timestamptz | nullable | |
-| total_score | numeric(8,2) | nullable | 交卷后写入 |
-| earned_score | numeric(8,2) | nullable | 交卷后写入 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段         | 类型         | 约束                   | 说明                                            |
+| ------------ | ------------ | ---------------------- | ----------------------------------------------- |
+| id           | uuid         | PK                     |                                                 |
+| exam_id      | uuid         | FK exams, not null     |                                                 |
+| user_id      | uuid         | FK user, not null      | 作答人                                          |
+| progress     | varchar(20)  | not null               | `IN_PROGRESS` / `SUBMITTED` / `TIMEOUT`         |
+| status       | boolean      | not null, default true | `true` 计入成绩，`false` 作废（重考前作废旧卷） |
+| started_at   | timestamptz  | not null               |                                                 |
+| submitted_at | timestamptz  | nullable               |                                                 |
+| total_score  | numeric(8,2) | nullable               | 交卷后写入                                      |
+| earned_score | numeric(8,2) | nullable               | 交卷后写入                                      |
+| created_at   | timestamptz  | not null               |                                                 |
+| updated_at   | timestamptz  | not null               |                                                 |
+| deleted_at   | timestamptz  | nullable               |                                                 |
 
 部分唯一索引：`(exam_id, user_id) WHERE deleted_at IS NULL AND progress = 'IN_PROGRESS'`，同一人同一试卷同时只能有一份进行中的作答。
 
 ### exam_answers
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| record_id | uuid | FK exam_records, not null | |
-| question_id | uuid | FK questions, not null | 原题引用，题被软删后仍保留 |
-| stem_snapshot | text | not null | 作答时题干 |
-| options_snapshot | jsonb | nullable | 作答时选项 |
-| answer_snapshot | jsonb | not null | 作答时标准答案 |
-| submitted_answer | jsonb | nullable | 用户作答 |
-| is_correct | boolean | nullable | 交卷后判定 |
-| score | numeric(8,2) | nullable | 本题得分 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | 清答案/重答该题时软删旧行 |
+| 字段             | 类型         | 约束                      | 说明                       |
+| ---------------- | ------------ | ------------------------- | -------------------------- |
+| id               | uuid         | PK                        |                            |
+| record_id        | uuid         | FK exam_records, not null |                            |
+| question_id      | uuid         | FK questions, not null    | 原题引用，题被软删后仍保留 |
+| stem_snapshot    | text         | not null                  | 作答时题干                 |
+| options_snapshot | jsonb        | nullable                  | 作答时选项                 |
+| answer_snapshot  | jsonb        | not null                  | 作答时标准答案             |
+| submitted_answer | jsonb        | nullable                  | 用户作答                   |
+| is_correct       | boolean      | nullable                  | 交卷后判定                 |
+| score            | numeric(8,2) | nullable                  | 本题得分                   |
+| created_at       | timestamptz  | not null                  |                            |
+| updated_at       | timestamptz  | not null                  |                            |
+| deleted_at       | timestamptz  | nullable                  | 清答案/重答该题时软删旧行  |
 
 部分唯一索引：`(record_id, question_id) WHERE deleted_at IS NULL`。
 
@@ -505,19 +508,19 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 ### tasks
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| owner_id | uuid | FK user, not null | |
-| title | varchar(200) | not null | |
-| description | text | nullable | |
-| progress | varchar(20) | not null, default `TODO` | `TODO` / `DOING` / `DONE` |
-| status | boolean | not null, default true | `true` 启用，`false` 取消/搁置（替代原 `CANCELLED`） |
-| due_at | timestamptz | nullable | |
-| completed_at | timestamptz | nullable | `progress = DONE` 时写入 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段         | 类型         | 约束                     | 说明                                                 |
+| ------------ | ------------ | ------------------------ | ---------------------------------------------------- |
+| id           | uuid         | PK                       |                                                      |
+| owner_id     | uuid         | FK user, not null        |                                                      |
+| title        | varchar(200) | not null                 |                                                      |
+| description  | text         | nullable                 |                                                      |
+| progress     | varchar(20)  | not null, default `TODO` | `TODO` / `DOING` / `DONE`                            |
+| status       | boolean      | not null, default true   | `true` 启用，`false` 取消/搁置（替代原 `CANCELLED`） |
+| due_at       | timestamptz  | nullable                 |                                                      |
+| completed_at | timestamptz  | nullable                 | `progress = DONE` 时写入                             |
+| created_at   | timestamptz  | not null                 |                                                      |
+| updated_at   | timestamptz  | not null                 |                                                      |
+| deleted_at   | timestamptz  | nullable                 |                                                      |
 
 默认列表：`deleted_at IS NULL AND status = true`。
 
@@ -529,14 +532,14 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 解绑知识点为软删除。
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| task_id | uuid | FK tasks, not null | |
-| knowledge_id | uuid | FK knowledges, not null | |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| 字段         | 类型        | 约束                    | 说明 |
+| ------------ | ----------- | ----------------------- | ---- |
+| id           | uuid        | PK                      |      |
+| task_id      | uuid        | FK tasks, not null      |      |
+| knowledge_id | uuid        | FK knowledges, not null |      |
+| created_at   | timestamptz | not null                |      |
+| updated_at   | timestamptz | not null                |      |
+| deleted_at   | timestamptz | nullable                |      |
 
 部分唯一索引：`(task_id, knowledge_id) WHERE deleted_at IS NULL`。挂接时两端必须同一 `owner_id` 且均未删除。
 
@@ -546,17 +549,17 @@ Better Auth 的 `session`、`account`、`verification` 由库维护，不做软�
 
 所有领域都不在数据库层做 `ON DELETE CASCADE`：删除只写 `deleted_at`。
 
-| 子表 | 父表 | 删除策略 |
-|------|------|----------|
-| user_roles / 各 owner 业务表 | user | 软删除用户，外键行保留 |
-| knowledges.category_id | categories | 软删除分类，外键保留；展示视为未分类 |
-| categories.parent_id | categories | 有未删除子节点时禁止软删除父节点 |
-| knowledge_tags / knowledge_relations | knowledges | 软删除知识点，关系行保留，默认查询过滤 |
-| content_knowledges | contents / knowledges | 软删除任一侧，关联行保留，默认查询过滤 |
+| 子表                                       | 父表                                 | 删除策略                                         |
+| ------------------------------------------ | ------------------------------------ | ------------------------------------------------ |
+| user_roles / 各 owner 业务表               | user                                 | 软删除用户，外键行保留                           |
+| knowledges.category_id                     | categories                           | 软删除分类，外键保留；展示视为未分类             |
+| categories.parent_id                       | categories                           | 有未删除子节点时禁止软删除父节点                 |
+| knowledge_tags / knowledge_relations       | knowledges                           | 软删除知识点，关系行保留，默认查询过滤           |
+| content_knowledges                         | contents / knowledges                | 软删除任一侧，关联行保留，默认查询过滤           |
 | question_knowledges / collection_questions | questions / collections / knowledges | 软删除任一侧，关联行保留；历史试卷仍可引用已删题 |
-| exam_questions | exams / questions | 软删除任一侧，组卷关联保留；作答靠快照 |
-| exam_records | exams / user | 软删除试卷或用户，作答行保留 |
-| exam_answers | exam_records | 软删除作答记录，答案行保留 |
-| task_knowledges | tasks / knowledges | 软删除任一侧，关联行保留，默认查询过滤 |
+| exam_questions                             | exams / questions                    | 软删除任一侧，组卷关联保留；作答靠快照           |
+| exam_records                               | exams / user                         | 软删除试卷或用户，作答行保留                     |
+| exam_answers                               | exam_records                         | 软删除作答记录，答案行保留                       |
+| task_knowledges                            | tasks / knowledges                   | 软删除任一侧，关联行保留，默认查询过滤           |
 
 跨表引用必须同一 `owner_id`（知识点、内容、题目、任务互相挂接时），在应用层校验。

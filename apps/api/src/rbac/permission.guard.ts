@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../auth/auth';
+import { bearerToken, loadActiveUser, looksLikeJwt, verifyAccessJwt } from '../auth/access-jwt';
 import { hasAllPermissions } from './permissions';
 import { PERMISSIONS_KEY } from './require-permissions.decorator';
 import { RbacService } from './rbac.service';
@@ -33,20 +34,13 @@ export class PermissionGuard implements CanActivate {
       ]) ?? [];
 
     const request = context.switchToHttp().getRequest<AuthedRequest>();
-    const session = await auth.api.getSession({
-      headers: fromNodeHeaders(request.headers),
-    });
-
-    if (!session?.user) {
+    const user = await this.resolveUser(request);
+    if (!user) {
       throw new UnauthorizedException();
     }
 
-    const codes = await this.rbac.listPermissionCodesForUser(session.user.id);
-    request.authUser = {
-      id: session.user.id,
-      email: session.user.email,
-      name: session.user.name,
-    };
+    const codes = await this.rbac.listPermissionCodesForUser(user.id);
+    request.authUser = user;
     request.permissionCodes = codes;
 
     if (required.length > 0 && !hasAllPermissions(codes, required)) {
@@ -54,5 +48,24 @@ export class PermissionGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private async resolveUser(request: AuthedRequest) {
+    const token = bearerToken(request.headers.authorization);
+    if (token && looksLikeJwt(token)) {
+      const payload = await verifyAccessJwt(token);
+      if (!payload?.sub) {
+        return null;
+      }
+      return loadActiveUser(payload.sub);
+    }
+
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers),
+    });
+    if (!session?.user) {
+      return null;
+    }
+    return loadActiveUser(session.user.id);
   }
 }
