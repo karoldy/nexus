@@ -16,6 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "nest start --watch",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed-rbac.ts"

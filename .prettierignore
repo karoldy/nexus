@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+coverage
+pnpm-lock.yaml
+.pnpm-store
+apps/api/drizzle
+apps/app/.expo
+apps/app/android
+apps/app/ios
+*.jks

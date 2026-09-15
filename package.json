@@ -6,14 +6,23 @@
     "node": ">=22"
   },
   "scripts": {
-    "db:up": "docker compose up -d",
-    "db:down": "docker compose down",
     "dev": "pnpm -r --parallel --if-present run dev",
     "dev:api": "pnpm --filter @nexus/api start:dev",
     "dev:web": "pnpm --filter @nexus/web dev",
     "dev:app": "pnpm --filter @nexus/app start",
     "build": "pnpm -r --if-present run build",
     "lint": "pnpm -r --if-present run lint",
-    "test": "pnpm -r --if-present run test"
+    "test": "pnpm -r --if-present run test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.6"
   }
 }

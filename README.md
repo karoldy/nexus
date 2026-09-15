@@ -12,10 +12,10 @@
 
 本仓库是 pnpm workspace Monorepo：三个应用都在 `apps/` 下，共享包预留在 `packages/`。
 
-| 目录 | 包名 | 端 | 技术栈 |
-|------|------|----|--------|
-| `apps/web` | `@nexus/web` | Web | Vite + React |
-| `apps/api` | `@nexus/api` | 后端 | NestJS + PostgreSQL |
+| 目录       | 包名         | 端     | 技术栈              |
+| ---------- | ------------ | ------ | ------------------- |
+| `apps/web` | `@nexus/web` | Web    | Vite + React        |
+| `apps/api` | `@nexus/api` | 后端   | NestJS + PostgreSQL |
 | `apps/app` | `@nexus/app` | 移动端 | Expo + React Native |
 
 ### 开发
@@ -24,7 +24,7 @@
 
 ```bash
 pnpm install
-pnpm db:up
+pnpm --filter @nexus/api db:up
 pnpm --filter @nexus/api db:migrate
 pnpm --filter @nexus/api db:seed
 
