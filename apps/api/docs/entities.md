@@ -9,9 +9,9 @@
 | 主键 | `id uuid`，应用侧生成 |
 | 审计 | `created_at`、`updated_at`；关联表同样保留 `updated_at`（软删除会改这一列） |
 | 删除 | 软删除：`deleted_at timestamptz`，空表示未删。默认查询过滤 `deleted_at IS NULL`。唯一约束做成部分索引（仅未删行） |
-| 状态 | 启用/禁用用 `boolean`（`true` 启用，`false` 禁用），不用枚举字符串 |
+| 状态 | 启用/禁用用 `boolean`（角色、权限、业务实体）。用户停用走 Better Auth `banned`，不用 `status` 表示删除 |
 | 进度 | 工作流用独立字段 `progress`（考试作答、任务），不占用 `status` |
-| 归属 | 业务行用 `owner_id → users.id`；管理员可跨用户 |
+| 归属 | 业务行用 `owner_id → user.id`（Better Auth 的 `user` 表）；管理员可跨用户 |
 | 权限码 | `resource:action`，如 `knowledge:create` |
 | JSON | PostgreSQL `jsonb`，用于选项、答案、附件元数据 |
 
@@ -21,20 +21,21 @@
 
 ```mermaid
 erDiagram
-  users ||--o{ user_roles : has
+  user ||--o{ session : has
+  user ||--o{ account : has
+  user ||--o{ user_roles : has
   roles ||--o{ user_roles : has
   roles ||--o{ role_permissions : has
   permissions ||--o{ role_permissions : has
-  users ||--o{ oauth_accounts : has
 
-  users ||--o{ categories : owns
-  users ||--o{ tags : owns
-  users ||--o{ knowledges : owns
-  users ||--o{ contents : owns
-  users ||--o{ questions : owns
-  users ||--o{ collections : owns
-  users ||--o{ exams : owns
-  users ||--o{ tasks : owns
+  user ||--o{ categories : owns
+  user ||--o{ tags : owns
+  user ||--o{ knowledges : owns
+  user ||--o{ contents : owns
+  user ||--o{ questions : owns
+  user ||--o{ collections : owns
+  user ||--o{ exams : owns
+  user ||--o{ tasks : owns
 
   categories ||--o{ categories : parent
   categories ||--o{ knowledges : classifies
@@ -54,7 +55,7 @@ erDiagram
   exams ||--o{ exam_questions : contains
   questions ||--o{ exam_questions : in
   exams ||--o{ exam_records : taken
-  users ||--o{ exam_records : takes
+  user ||--o{ exam_records : takes
   exam_records ||--o{ exam_answers : has
 
   tasks ||--o{ task_knowledges : practices
@@ -65,43 +66,9 @@ erDiagram
 
 ## 1. Auth / RBAC
 
-本节已按软删除 + 布尔状态定稿。查询默认带 `deleted_at IS NULL`。
+认证交给 **Better Auth**（`user` / `session` / `account` / `verification`）。角色权限是我们自己的表，不塞进 Better Auth。
 
-`status` 与 `deleted_at` 分工：`status = false` 是停用（账号还在，不能登录）；`deleted_at` 有值是注销/解绑（对业务不可见，邮箱等唯一键释放）。
-
-### users
-
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| email | varchar(255) | not null | 登录名 |
-| password_hash | varchar(255) | not null | 本地密码；仅 OAuth 时可存随机不可登录哈希 |
-| display_name | varchar(100) | not null | |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
-| email_verified_at | timestamptz | nullable | 空表示未验证 |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | 非空即软删除 |
-
-部分唯一索引：`(email) WHERE deleted_at IS NULL`。
-
-登录条件：`deleted_at IS NULL` 且 `status = true`。软删除用户不级联改业务数据，历史 `owner_id` 仍指向该行。
-
-### oauth_accounts
-
-同一用户可绑多个第三方账号。解绑为软删除。
-
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | uuid | PK | |
-| user_id | uuid | FK users, not null | |
-| provider | varchar(50) | not null | 如 `github`、`google` |
-| provider_user_id | varchar(255) | not null | 第三方侧用户 id |
-| created_at | timestamptz | not null | |
-| updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | 非空即已解绑 |
-
-部分唯一索引：`(provider, provider_user_id) WHERE deleted_at IS NULL`。
+软删除一律用 `deleted_at`，不用 `status`。角色、权限上的 `status` 只表示启用/禁用。
 
 ### roles
 
@@ -110,14 +77,14 @@ erDiagram
 | id | uuid | PK | |
 | code | varchar(50) | not null | `admin` / `user` |
 | name | varchar(100) | not null | |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
+| status | boolean | not null, default true | `true` 启用，`false` 禁用（不是删除） |
 | created_at | timestamptz | not null | |
 | updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| deleted_at | timestamptz | nullable | 非空即软删除 |
 
 部分唯一索引：`(code) WHERE deleted_at IS NULL`。
 
-鉴权只加载 `status = true` 且未删除的角色。系统内置 `admin`、`user` 不允许软删除（应用层禁止）。
+鉴权只加载 `deleted_at IS NULL AND status = true` 的角色。内置 `admin`、`user` 不允许软删除。
 
 ### permissions
 
@@ -126,10 +93,10 @@ erDiagram
 | id | uuid | PK | |
 | code | varchar(100) | not null | `knowledge:create` |
 | name | varchar(100) | not null | |
-| status | boolean | not null, default true | `true` 启用，`false` 禁用 |
+| status | boolean | not null, default true | `true` 启用，`false` 禁用（不是删除） |
 | created_at | timestamptz | not null | |
 | updated_at | timestamptz | not null | |
-| deleted_at | timestamptz | nullable | |
+| deleted_at | timestamptz | nullable | 非空即软删除 |
 
 部分唯一索引：`(code) WHERE deleted_at IS NULL`。
 
@@ -137,12 +104,12 @@ erDiagram
 
 ### user_roles
 
-中间表自带主键，便于软删除后再重新绑定。
+中间表自带主键，解绑走 `deleted_at`，便于再绑定。
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| user_id | uuid | FK users, not null | |
+| user_id | uuid | FK user, not null | Better Auth `user.id` |
 | role_id | uuid | FK roles, not null | |
 | created_at | timestamptz | not null | |
 | updated_at | timestamptz | not null | |
@@ -165,6 +132,41 @@ erDiagram
 
 部分唯一索引：`(role_id, permission_id) WHERE deleted_at IS NULL`。
 
+### user
+
+Better Auth 核心表，不另建用户表。id 配置为 uuid，与全局约定一致。
+
+库内置列不改语义。我们只追加软删除，以及 Admin 插件的停用字段。
+
+| 字段 | 类型 | 来源 | 说明 |
+|------|------|------|------|
+| id | uuid | Better Auth | PK |
+| name | varchar | Better Auth | 显示名 |
+| email | varchar | Better Auth | 登录名 |
+| email_verified | boolean | Better Auth | 邮箱是否已验证，不再单独建 `email_verified_at` |
+| image | varchar | Better Auth | 头像，可空 |
+| created_at | timestamptz | Better Auth | |
+| updated_at | timestamptz | Better Auth | |
+| deleted_at | timestamptz | additionalFields | 软删除；空表示未删 |
+| banned | boolean | admin 插件 | 停用账号，仍占邮箱 |
+| ban_reason | text | admin 插件 | 可空 |
+| ban_expires | timestamptz | admin 插件 | 可空；空表示永久停用 |
+| role | text | admin 插件 | Better Auth 内置角色字段，与自建 RBAC 分开 |
+
+部分唯一索引：`(email) WHERE deleted_at IS NULL`（Better Auth 默认 email unique 要改成这条，否则注销后无法再用同一邮箱注册）。
+
+登录：`deleted_at IS NULL` 且未 `banned`（或 `ban_expires` 已过）。软删除不改业务表的 `owner_id`。
+
+Better Auth 的 `session`、`account`、`verification` 由库维护，不做软删除：注销用户时撤 session；解绑走库的 account 删除，不自建 `oauth_accounts`。
+
+### session / account / verification
+
+| 表 | 职责 |
+|----|------|
+| session | 登录会话；用户软删除时由 Better Auth 撤销 |
+| account | 密码哈希与 OAuth 绑定（`provider_id` + `account_id`） |
+| verification | 邮箱验证、重置密码等一次性凭证 |
+
 ---
 
 ## 2. Knowledge
@@ -178,7 +180,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | parent_id | uuid | FK categories, nullable | 根节点为空；不可指向已软删除节点 |
 | name | varchar(100) | not null | |
 | slug | varchar(120) | not null | |
@@ -200,7 +202,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | name | varchar(50) | not null | |
 | status | boolean | not null, default true | `true` 启用，`false` 禁用 |
 | created_at | timestamptz | not null | |
@@ -216,7 +218,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | category_id | uuid | FK categories, nullable | 可指向已软删除分类，展示时当未分类 |
 | title | varchar(200) | not null | |
 | summary | text | nullable | |
@@ -253,7 +255,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | 冗余，便于按用户查询 |
+| owner_id | uuid | FK user, not null | 冗余，便于按用户查询 |
 | source_id | uuid | FK knowledges, not null | |
 | target_id | uuid | FK knowledges, not null | |
 | relation_type | varchar(30) | not null | 见下表 |
@@ -284,7 +286,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | type | varchar(20) | not null | `NOTE` / `ARTICLE` / `DOCUMENT` / `RESOURCE` |
 | title | varchar(200) | not null | |
 | body | text | nullable | NOTE / ARTICLE 正文 |
@@ -339,7 +341,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | type | varchar(30) | not null | 见下表 |
 | stem | text | not null | 题干 |
 | options | jsonb | nullable | 选择题选项数组 `[{id, text}]` |
@@ -384,7 +386,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | name | varchar(200) | not null | |
 | description | text | nullable | |
 | published | boolean | not null, default false | `false` 草稿，`true` 已发布 |
@@ -426,7 +428,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | title | varchar(200) | not null | |
 | description | text | nullable | |
 | duration_seconds | int | nullable | 空表示不限时 |
@@ -463,7 +465,7 @@ erDiagram
 |------|------|------|------|
 | id | uuid | PK | |
 | exam_id | uuid | FK exams, not null | |
-| user_id | uuid | FK users, not null | 作答人 |
+| user_id | uuid | FK user, not null | 作答人 |
 | progress | varchar(20) | not null | `IN_PROGRESS` / `SUBMITTED` / `TIMEOUT` |
 | status | boolean | not null, default true | `true` 计入成绩，`false` 作废（重考前作废旧卷） |
 | started_at | timestamptz | not null | |
@@ -506,7 +508,7 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | uuid | PK | |
-| owner_id | uuid | FK users, not null | |
+| owner_id | uuid | FK user, not null | |
 | title | varchar(200) | not null | |
 | description | text | nullable | |
 | progress | varchar(20) | not null, default `TODO` | `TODO` / `DOING` / `DONE` |
@@ -546,14 +548,14 @@ erDiagram
 
 | 子表 | 父表 | 删除策略 |
 |------|------|----------|
-| oauth_accounts / user_roles / 各 owner 业务表 | users | 软删除用户，外键行保留 |
+| user_roles / 各 owner 业务表 | user | 软删除用户，外键行保留 |
 | knowledges.category_id | categories | 软删除分类，外键保留；展示视为未分类 |
 | categories.parent_id | categories | 有未删除子节点时禁止软删除父节点 |
 | knowledge_tags / knowledge_relations | knowledges | 软删除知识点，关系行保留，默认查询过滤 |
 | content_knowledges | contents / knowledges | 软删除任一侧，关联行保留，默认查询过滤 |
 | question_knowledges / collection_questions | questions / collections / knowledges | 软删除任一侧，关联行保留；历史试卷仍可引用已删题 |
 | exam_questions | exams / questions | 软删除任一侧，组卷关联保留；作答靠快照 |
-| exam_records | exams / users | 软删除试卷或用户，作答行保留 |
+| exam_records | exams / user | 软删除试卷或用户，作答行保留 |
 | exam_answers | exam_records | 软删除作答记录，答案行保留 |
 | task_knowledges | tasks / knowledges | 软删除任一侧，关联行保留，默认查询过滤 |
 

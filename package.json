@@ -6,6 +6,8 @@
     "node": ">=22"
   },
   "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
     "dev": "pnpm -r --parallel --if-present run dev",
     "dev:api": "pnpm --filter @nexus/api start:dev",
     "dev:web": "pnpm --filter @nexus/web dev",

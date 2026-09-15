@@ -24,6 +24,9 @@
 
 ```bash
 pnpm install
+pnpm db:up
+pnpm --filter @nexus/api db:migrate
+pnpm --filter @nexus/api db:seed
 
 pnpm dev:api    # NestJS http://localhost:3000
 pnpm dev:web    # Vite
@@ -83,7 +86,7 @@ apps/api/src/
 
 ### Auth
 
-解决「你是谁？」。由 NestJS 认证模块负责（可接 Better Auth）：注册、登录、Session 或 Token、OAuth、邮箱验证、密码校验。
+解决「你是谁？」。由 **Better Auth** 负责：注册、登录、Session、OAuth、邮箱验证、密码。用户表用库自带的 `user`，软删除用 `deleted_at`，停用用 admin 插件的 `banned`。
 
 ### RBAC
 
@@ -93,7 +96,7 @@ apps/api/src/
 User ──N:M── UserRole ──► Role ──N:M── RolePermission ──► Permission
 ```
 
-表：`role`、`permission`、`user_role`、`role_permission`。
+表：`roles`、`permissions`、`user_roles`、`role_permissions`（自建，挂 Better Auth 的 `user.id`）。
 
 初始角色：`admin`、`user`。
 
