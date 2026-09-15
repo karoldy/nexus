@@ -46,7 +46,14 @@ describe.skipIf(!hasDatabase)('auth e2e', () => {
   });
 
   it('rejects unauthenticated /api/me', async () => {
-    await request(app.getHttpServer()).get('/api/me').expect(401);
+    const res = await request(app.getHttpServer()).get('/api/me').expect(401);
+    expect(res.body).toMatchObject({
+      success: false,
+      code: 401,
+      errorCode: 'UNAUTHORIZED',
+    });
+    expect(res.body.requestId).toEqual(expect.any(String));
+    expect(res.headers['x-request-id']).toBe(res.body.requestId);
   });
 
   it('registers, signs in, and reads /api/me', async () => {
@@ -59,13 +66,20 @@ describe.skipIf(!hasDatabase)('auth e2e', () => {
     expect(signUp.status).toBeLessThan(300);
 
     const me = await agent.get('/api/me').expect(200);
-    expect(me.body.user.email).toBe(email);
-    expect(me.body.permissionCodes).toContain('knowledge:read');
-    expect(me.body.permissionCodes).not.toContain('knowledge:create');
+    expect(me.body.success).toBe(true);
+    expect(me.body.code).toBe(200);
+    expect(me.body.data.user.email).toBe(email);
+    expect(me.body.data.permissionCodes).toContain('knowledge:read');
+    expect(me.body.data.permissionCodes).not.toContain('knowledge:create');
   });
 
   it('forbids knowledge:create for the default user role', async () => {
-    await agent.get('/api/probe/create').expect(403);
+    const res = await agent.get('/api/probe/create').expect(403);
+    expect(res.body).toMatchObject({
+      success: false,
+      code: 403,
+      errorCode: 'FORBIDDEN',
+    });
   });
 
   it('issues a 10h access JWT that can call /api/me', async () => {
@@ -96,7 +110,7 @@ describe.skipIf(!hasDatabase)('auth e2e', () => {
       .get('/api/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
-    expect(me.body.user.email).toBe(email);
+    expect(me.body.data.user.email).toBe(email);
   });
 
   it('rejects change-password with the wrong current password', async () => {
