@@ -422,9 +422,7 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 
 ## 5. Exam
 
-本节已按软删除 + 布尔状态对齐。组卷引用当前题目；作答写入题面快照，事后改题或软删题不影响历史成绩。
-
-试卷的启用/发布用 `status` / `published`。作答进度不叫 `status`，用 `progress`，避免和布尔启用冲突。
+组卷引用当前已发布题目；开考时写入题面快照，事后改题或软删题不影响历史成绩。试卷没有 `status`：工作台列表 `deleted_at IS NULL`（含草稿）；`published` 只决定能否开考。作答进度用 `progress`，作答记录上的 `status` 表示是否计入成绩。
 
 ### exams
 
@@ -436,12 +434,11 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | description      | text         | nullable                |                             |
 | duration_seconds | int          | nullable                | 空表示不限时                |
 | published        | boolean      | not null, default false | `false` 草稿，`true` 已发布 |
-| status           | boolean      | not null, default true  | `true` 启用，`false` 禁用   |
 | created_at       | timestamptz  | not null                |                             |
 | updated_at       | timestamptz  | not null                |                             |
 | deleted_at       | timestamptz  | nullable                |                             |
 
-默认可考列表：`deleted_at IS NULL AND status = true AND published = true`。软删除试卷不删作答记录。
+默认列表：`deleted_at IS NULL`（包含草稿）。开考须 `published = true` 且至少一题。软删除试卷不删作答记录。部分唯一索引：`(owner_id, title) WHERE deleted_at IS NULL`。越权、跨 owner、已软删试卷 → **404**。
 
 ### exam_questions
 
@@ -458,7 +455,7 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | updated_at  | timestamptz  | not null               |          |
 | deleted_at  | timestamptz  | nullable               |          |
 
-部分唯一索引：`(exam_id, question_id) WHERE deleted_at IS NULL`。组卷时题目须未删除、已启用、已发布。
+部分唯一索引：`(exam_id, question_id) WHERE deleted_at IS NULL`。组卷时题目须同一 owner、未删除、已发布。草稿试卷可包含已发布题目。
 
 ### exam_records
 
@@ -479,7 +476,7 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | updated_at   | timestamptz  | not null               |                                                 |
 | deleted_at   | timestamptz  | nullable               |                                                 |
 
-部分唯一索引：`(exam_id, user_id) WHERE deleted_at IS NULL AND progress = 'IN_PROGRESS'`，同一人同一试卷同时只能有一份进行中的作答。
+部分唯一索引：`(exam_id, user_id) WHERE deleted_at IS NULL AND progress = 'IN_PROGRESS'`，同一人同一试卷同时只能有一份进行中的作答。已有进行中作答时再次开考返回该记录。新开考会把该用户该卷上已交/超时记录的 `status` 置为 `false`（作废）。限时卷在超过 `started_at + duration_seconds` 时按 `TIMEOUT` 自动交卷判分。
 
 ### exam_answers
 
@@ -488,11 +485,13 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 | id               | uuid         | PK                        |                            |
 | record_id        | uuid         | FK exam_records, not null |                            |
 | question_id      | uuid         | FK questions, not null    | 原题引用，题被软删后仍保留 |
+| type_snapshot    | varchar(30)  | not null                  | 作答时题型                 |
 | stem_snapshot    | text         | not null                  | 作答时题干                 |
 | options_snapshot | jsonb        | nullable                  | 作答时选项                 |
 | answer_snapshot  | jsonb        | not null                  | 作答时标准答案             |
 | submitted_answer | jsonb        | nullable                  | 用户作答                   |
 | is_correct       | boolean      | nullable                  | 交卷后判定                 |
+| max_score        | numeric(8,2) | not null                  | 开考时本题分值快照         |
 | score            | numeric(8,2) | nullable                  | 本题得分                   |
 | created_at       | timestamptz  | not null                  |                            |
 | updated_at       | timestamptz  | not null                  |                            |

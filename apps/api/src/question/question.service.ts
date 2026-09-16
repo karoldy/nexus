@@ -116,7 +116,7 @@ export class QuestionService {
       throw new NotFoundException();
     }
     if (row.published === false) {
-      throw new BadRequestException('Draft questions cannot be added to collections');
+      throw new BadRequestException('Draft questions cannot be added to collections or exams');
     }
     return row;
   }

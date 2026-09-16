@@ -84,6 +84,7 @@
     "questions": "Questions",
     "collections": "Question banks",
     "contents": "Content",
+    "exams": "Exams",
     "categories": "Categories",
     "tags": "Tags",
     "account": "Account"
@@ -105,7 +106,8 @@
     "goKnowledges": "Open knowledge list",
     "goQuestions": "Open questions",
     "goCollections": "Open question banks",
-    "goContents": "Open content list"
+    "goContents": "Open content list",
+    "goExams": "Open exams"
   },
   "knowledge": {
     "title": "Knowledge",
@@ -211,6 +213,36 @@
       "ARTICLE": "Article",
       "DOCUMENT": "Document",
       "RESOURCE": "Resource"
+    }
+  },
+  "exam": {
+    "title": "Exams",
+    "create": "New exam",
+    "edit": "Edit exam",
+    "take": "Take exam",
+    "search": "Search",
+    "published": "Publish state",
+    "all": "All",
+    "publishedYes": "Published",
+    "draft": "Draft",
+    "empty": "No exams yet",
+    "titleField": "Title",
+    "description": "Description",
+    "duration": "Time limit (seconds, optional)",
+    "questions": "Questions",
+    "questionsHint": "Only published questions; check order is sort order; score is on the right",
+    "noQuestions": "No published questions to add",
+    "start": "Start",
+    "startFailed": "Could not start exam",
+    "submit": "Submit",
+    "submitted": "Submitted",
+    "submitFailed": "Submit failed",
+    "correct": "Correct",
+    "incorrect": "Incorrect",
+    "progress": {
+      "IN_PROGRESS": "In progress",
+      "SUBMITTED": "Submitted",
+      "TIMEOUT": "Timed out"
     }
   }
 }

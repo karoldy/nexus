@@ -84,6 +84,7 @@
     "questions": "題目",
     "collections": "題庫",
     "contents": "內容",
+    "exams": "考試",
     "categories": "分類",
     "tags": "標籤",
     "account": "帳號"
@@ -105,7 +106,8 @@
     "goKnowledges": "進入知識列表",
     "goQuestions": "進入題目列表",
     "goCollections": "進入題庫",
-    "goContents": "進入內容列表"
+    "goContents": "進入內容列表",
+    "goExams": "進入考試"
   },
   "knowledge": {
     "title": "知識",
@@ -211,6 +213,36 @@
       "ARTICLE": "文章",
       "DOCUMENT": "文件",
       "RESOURCE": "外連"
+    }
+  },
+  "exam": {
+    "title": "考試",
+    "create": "新建試卷",
+    "edit": "編輯試卷",
+    "take": "作答",
+    "search": "搜尋",
+    "published": "發佈狀態",
+    "all": "全部",
+    "publishedYes": "已發佈",
+    "draft": "草稿",
+    "empty": "暫無試卷",
+    "titleField": "標題",
+    "description": "描述",
+    "duration": "限時（秒，可空）",
+    "questions": "組卷題目",
+    "questionsHint": "只能收錄已發佈題目，勾選順序即排序，右側為分值",
+    "noQuestions": "暫無可組卷的已發佈題目",
+    "start": "開始作答",
+    "startFailed": "無法開考",
+    "submit": "交卷",
+    "submitted": "已交卷",
+    "submitFailed": "交卷失敗",
+    "correct": "正確",
+    "incorrect": "錯誤",
+    "progress": {
+      "IN_PROGRESS": "作答中",
+      "SUBMITTED": "已交卷",
+      "TIMEOUT": "已超時"
     }
   }
 }

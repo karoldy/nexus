@@ -28,3 +28,13 @@ export type {
   ContentType,
 } from './content';
 export { CONTENT_TYPES } from './content';
+export type {
+  Exam,
+  ExamAnswer,
+  ExamListParams,
+  ExamPayload,
+  ExamQuestionInput,
+  ExamQuestionRef,
+  ExamRecord,
+  ExamRecordListParams,
+} from './exam';

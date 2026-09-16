@@ -18,4 +18,8 @@ export const paths = {
   contents: '/contents',
   contentNew: '/contents/new',
   contentEdit: (id: string) => `/contents/${id}`,
+  exams: '/exams',
+  examNew: '/exams/new',
+  examEdit: (id: string) => `/exams/${id}`,
+  examTake: (id: string) => `/exam-records/${id}`,
 } as const;

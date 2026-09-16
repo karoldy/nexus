@@ -5,6 +5,9 @@ import { CollectionFormPage } from '@/pages/collection-form-page';
 import { CollectionsPage } from '@/pages/collections-page';
 import { ContentsPage } from '@/pages/contents-page';
 import { ContentFormPage } from '@/pages/content-form-page';
+import { ExamFormPage } from '@/pages/exam-form-page';
+import { ExamTakePage } from '@/pages/exam-take-page';
+import { ExamsPage } from '@/pages/exams-page';
 import { HomePage } from '@/pages/home-page';
 import { KnowledgeFormPage } from '@/pages/knowledge-form-page';
 import { KnowledgesPage } from '@/pages/knowledges-page';
@@ -28,6 +31,10 @@ export function protectedRoutes() {
       <Route path="contents" element={<ContentsPage />} />
       <Route path="contents/new" element={<ContentFormPage />} />
       <Route path="contents/:id" element={<ContentFormPage />} />
+      <Route path="exams" element={<ExamsPage />} />
+      <Route path="exams/new" element={<ExamFormPage />} />
+      <Route path="exams/:id" element={<ExamFormPage />} />
+      <Route path="exam-records/:id" element={<ExamTakePage />} />
       <Route path="categories" element={<CategoriesPage />} />
       <Route path="tags" element={<TagsPage />} />
     </Route>

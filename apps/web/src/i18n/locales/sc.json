@@ -84,6 +84,7 @@
     "questions": "题目",
     "collections": "题库",
     "contents": "内容",
+    "exams": "考试",
     "categories": "分类",
     "tags": "标签",
     "account": "账号"
@@ -105,7 +106,8 @@
     "goKnowledges": "进入知识列表",
     "goQuestions": "进入题目列表",
     "goCollections": "进入题库",
-    "goContents": "进入内容列表"
+    "goContents": "进入内容列表",
+    "goExams": "进入考试"
   },
   "knowledge": {
     "title": "知识",
@@ -211,6 +213,36 @@
       "ARTICLE": "文章",
       "DOCUMENT": "文档",
       "RESOURCE": "外链"
+    }
+  },
+  "exam": {
+    "title": "考试",
+    "create": "新建试卷",
+    "edit": "编辑试卷",
+    "take": "作答",
+    "search": "搜索",
+    "published": "发布状态",
+    "all": "全部",
+    "publishedYes": "已发布",
+    "draft": "草稿",
+    "empty": "暂无试卷",
+    "titleField": "标题",
+    "description": "描述",
+    "duration": "限时（秒，可空）",
+    "questions": "组卷题目",
+    "questionsHint": "只能收录已发布题目，勾选顺序即排序，右侧为分值",
+    "noQuestions": "暂无可组卷的已发布题目",
+    "start": "开始作答",
+    "startFailed": "无法开考",
+    "submit": "交卷",
+    "submitted": "已交卷",
+    "submitFailed": "交卷失败",
+    "correct": "正确",
+    "incorrect": "错误",
+    "progress": {
+      "IN_PROGRESS": "作答中",
+      "SUBMITTED": "已交卷",
+      "TIMEOUT": "已超时"
     }
   }
 }

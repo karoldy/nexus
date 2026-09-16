@@ -3,3 +3,4 @@ export * from './rbac';
 export * from './knowledge';
 export * from './question';
 export * from './content';
+export * from './exam';

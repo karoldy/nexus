@@ -24,7 +24,7 @@
 
 ```bash
 pnpm install
-pnpm --filter @nexus/api db:up
+pnpm --filter @nexus/api db:up      # 当前仅 Postgres；MinIO 见下文 Content
 pnpm --filter @nexus/api db:migrate
 pnpm --filter @nexus/api db:seed
 
@@ -131,6 +131,18 @@ knowledge_relation: id, source_id, target_id, relation_type, created_at
 关系类型：`RELATED`、`PREREQUISITE`、`DERIVED`、`EXTENDS`、`CONTRASTS`。
 
 例如：JavaScript → `prerequisite` Promise，`related` Async/Await / Event Loop，`extends` TypeScript。
+
+### Content
+
+知识载体：一张 `contents` 表用 `type` 区分 `NOTE` / `ARTICLE` / `DOCUMENT` / `RESOURCE`。`DOCUMENT` 目前只存 `file_key` 字符串，**不上传、不跑对象存储**。
+
+后续自建文件服务：**在现有 [`apps/api/docker-compose.yml`](apps/api/docker-compose.yml) 里再加一个 MinIO 容器**（与 Postgres 同一次 `pnpm --filter @nexus/api db:up`），不要另开根目录 Compose，也不要把文件写进 Postgres。约定：
+
+- MinIO 走 S3 API（本地约 `9000`），控制台约 `9001`；数据用独立 named volume。
+- Nest 鉴权后发 **预签名 PUT/GET**；`file_key` 由服务端生成（如 `{ownerId}/{uuid}.ext`），客户端不要手填任意路径。
+- Postgres 继续只记 `file_key` / `mime_type` / `file_size`；软删 Content 不立刻删对象，另做清理任务。
+
+这一步 **尚未落地**（Compose 里暂时只有 Postgres）。
 
 ---
 

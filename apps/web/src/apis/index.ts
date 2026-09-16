@@ -41,3 +41,15 @@ export {
   updateCollection,
 } from './collection';
 export { createContent, deleteContent, fetchContent, listContents, updateContent } from './content';
+export {
+  createExam,
+  deleteExam,
+  fetchExam,
+  fetchExamRecord,
+  listExamRecords,
+  listExams,
+  saveExamAnswers,
+  startExam,
+  submitExamRecord,
+  updateExam,
+} from './exam';

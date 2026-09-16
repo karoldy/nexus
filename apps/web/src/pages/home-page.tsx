@@ -56,6 +56,9 @@ export function HomePage() {
           <Link className={buttonVariants({ variant: 'outline' })} to={paths.collections}>
             {t('home.goCollections')}
           </Link>
+          <Link className={buttonVariants({ variant: 'outline' })} to={paths.exams}>
+            {t('home.goExams')}
+          </Link>
         </div>
         <Card>
           <CardHeader>

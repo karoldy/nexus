@@ -8,6 +8,7 @@ import { HttpModule } from './shared/http/http.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { QuestionModule } from './question/question.module';
 import { ContentModule } from './content/content.module';
+import { ExamModule } from './exam/exam.module';
 import { RbacModule } from './rbac/rbac.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { RbacModule } from './rbac/rbac.module';
     KnowledgeModule,
     QuestionModule,
     ContentModule,
+    ExamModule,
   ],
   controllers: [AppController],
   providers: [AppService],
