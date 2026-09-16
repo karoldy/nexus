@@ -40,3 +40,4 @@ export {
   listCollections,
   updateCollection,
 } from './collection';
+export { createContent, deleteContent, fetchContent, listContents, updateContent } from './content';

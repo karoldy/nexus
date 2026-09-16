@@ -277,45 +277,48 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 
 ## 3. Content
 
-本节已按软删除 + 布尔状态对齐。`type` 仍是载体形态，不是启用状态。
+本节已按软删除对齐。不要 `status`。`type` 是载体形态，不是启用状态。工作台列表含草稿。
 
 ### contents
 
-知识载体。一张表 + `type` 区分形态，避免 Note / Article / Document / Resource 四套平行结构。
+知识载体。一张表 + `type` 区分形态，避免 Note / Article / Document / Resource 四套平行结构。本期 **不接对象存储**：`file_key` 由客户端传入字符串。
 
-| 字段       | 类型          | 约束                    | 说明                                         |
-| ---------- | ------------- | ----------------------- | -------------------------------------------- |
-| id         | uuid          | PK                      |                                              |
-| owner_id   | uuid          | FK user, not null       |                                              |
-| type       | varchar(20)   | not null                | `NOTE` / `ARTICLE` / `DOCUMENT` / `RESOURCE` |
-| title      | varchar(200)  | not null                |                                              |
-| body       | text          | nullable                | NOTE / ARTICLE 正文                          |
-| summary    | text          | nullable                | 主要用于 ARTICLE                             |
-| url        | varchar(2000) | nullable                | RESOURCE 外链                                |
-| file_key   | varchar(500)  | nullable                | DOCUMENT 对象存储 key                        |
-| mime_type  | varchar(100)  | nullable                | DOCUMENT                                     |
-| file_size  | bigint        | nullable                | 字节                                         |
-| metadata   | jsonb         | nullable                | 额外信息                                     |
-| published  | boolean       | not null, default false | `false` 草稿，`true` 已发布                  |
-| status     | boolean       | not null, default true  | `true` 启用，`false` 禁用                    |
-| created_at | timestamptz   | not null                |                                              |
-| updated_at | timestamptz   | not null                |                                              |
-| deleted_at | timestamptz   | nullable                |                                              |
+| 字段       | 类型          | 约束                    | 说明                                            |
+| ---------- | ------------- | ----------------------- | ----------------------------------------------- |
+| id         | uuid          | PK                      |                                                 |
+| owner_id   | uuid          | FK user, not null       |                                                 |
+| type       | varchar(20)   | not null                | `NOTE` / `ARTICLE` / `DOCUMENT` / `RESOURCE`    |
+| title      | varchar(200)  | not null                |                                                 |
+| body       | text          | nullable                | NOTE / ARTICLE 正文                             |
+| summary    | text          | nullable                | 主要用于 ARTICLE                                |
+| url        | varchar(2000) | nullable                | RESOURCE 外链                                   |
+| file_key   | varchar(500)  | nullable                | DOCUMENT 对象 key（字符串，不校验对象是否存在） |
+| mime_type  | varchar(100)  | nullable                | DOCUMENT                                        |
+| file_size  | bigint        | nullable                | 字节                                            |
+| metadata   | jsonb         | nullable                | 额外信息                                        |
+| published  | boolean       | not null, default false | `false` 草稿，`true` 已发布                     |
+| created_at | timestamptz   | not null                |                                                 |
+| updated_at | timestamptz   | not null                |                                                 |
+| deleted_at | timestamptz   | nullable                |                                                 |
 
-默认列表：`deleted_at IS NULL AND status = true AND published = true`。
+默认列表：`owner_id = 当前用户 AND deleted_at IS NULL`（含草稿）。可用 `published`、`type`、`knowledgeId`、`q`（title `ilike`）过滤。
 
-按 type 约束（应用层 + DB CHECK）：
+索引：`owner_id`；`(owner_id, published)`；`(owner_id, type)`。
 
-- `NOTE`：`body` 必填
-- `ARTICLE`：`body` 必填
-- `DOCUMENT`：`file_key` 必填
-- `RESOURCE`：`url` 必填
+按 type 约束（应用层）：
 
-软删除 DOCUMENT 不删对象存储文件，由后续清理任务处理 `deleted_at` 已久的 `file_key`。
+- `NOTE`：`body` 必填；`url` / `file_key` 写成 null
+- `ARTICLE`：`body` 必填；`url` / `file_key` 写成 null；`summary` 可选
+- `DOCUMENT`：`file_key` 必填；`body` / `url` 写成 null；`mime_type` / `file_size` 可选
+- `RESOURCE`：`url` 必填；`body` / `file_key` 写成 null
+
+更改 `type` 的同一次请求必须带上该形态合法字段，否则 400。
+
+软删除 DOCUMENT 不删外部文件（本期无对象存储）。
 
 ### content_knowledges
 
-一条内容可挂多个知识点。解绑为软删除。
+一条内容可挂多个知识点。解绑为软删除。`knowledgeIds` 出现则整表替换。
 
 | 字段         | 类型        | 约束                    | 说明 |
 | ------------ | ----------- | ----------------------- | ---- |
@@ -328,7 +331,9 @@ Better Auth 的 `session`、`account`、`verification`、`jwks` 由库维护，�
 
 部分唯一索引：`(content_id, knowledge_id) WHERE deleted_at IS NULL`。
 
-内容或知识点软删除后，关联行保留，默认查询不可见。挂接时两端必须同一 `owner_id` 且均未删除。
+挂接：内容必须已发布；每个 `knowledgeId` 同一 owner、未删、已发布。空数组清空。草稿带非空 `knowledgeIds` → 400。跨 owner / 已软删知识 → 404。未发布知识 → 400。
+
+软删内容时，将其未删的 `content_knowledges` 一并软删。越权、跨 owner、已软删内容 → **404**。
 
 ---
 

@@ -30,6 +30,9 @@ export function WorkspaceShell({ title, children }: { title: string; children: R
           <NavLink to={paths.knowledges} className={navClass}>
             {t('nav.knowledges')}
           </NavLink>
+          <NavLink to={paths.contents} className={navClass}>
+            {t('nav.contents')}
+          </NavLink>
           <NavLink to={paths.questions} className={navClass}>
             {t('nav.questions')}
           </NavLink>

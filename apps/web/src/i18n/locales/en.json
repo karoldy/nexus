@@ -38,7 +38,10 @@
     "optionMin": "Choice questions need at least two options",
     "optionText": "Option text cannot be empty",
     "answerRequired": "Answer is required",
-    "blankRequired": "Fill every blank"
+    "blankRequired": "Fill every blank",
+    "bodyRequired": "Body is required",
+    "fileKeyRequired": "File key is required",
+    "urlRequired": "URL is required"
   },
   "auth": {
     "kicker": "NEXUS / AUTH",
@@ -80,6 +83,7 @@
     "knowledges": "Knowledge",
     "questions": "Questions",
     "collections": "Question banks",
+    "contents": "Content",
     "categories": "Categories",
     "tags": "Tags",
     "account": "Account"
@@ -100,7 +104,8 @@
     "passwordUpdated": "Password updated",
     "goKnowledges": "Open knowledge list",
     "goQuestions": "Open questions",
-    "goCollections": "Open question banks"
+    "goCollections": "Open question banks",
+    "goContents": "Open content list"
   },
   "knowledge": {
     "title": "Knowledge",
@@ -180,5 +185,32 @@
     "questions": "Questions",
     "questionsHint": "Only published questions can be added; check order is sort order",
     "noQuestions": "No published questions to add"
+  },
+  "content": {
+    "title": "Content",
+    "create": "New content",
+    "edit": "Edit content",
+    "search": "Search",
+    "published": "Publish state",
+    "all": "All",
+    "publishedYes": "Published",
+    "draft": "Draft",
+    "empty": "No content yet",
+    "type": "Type",
+    "titleField": "Title",
+    "body": "Body",
+    "summary": "Summary",
+    "url": "URL",
+    "fileKey": "File key",
+    "mimeType": "MIME",
+    "fileSize": "Size (bytes)",
+    "knowledges": "Knowledge",
+    "knowledgesHint": "Only published content can link published knowledge",
+    "types": {
+      "NOTE": "Note",
+      "ARTICLE": "Article",
+      "DOCUMENT": "Document",
+      "RESOURCE": "Resource"
+    }
   }
 }

@@ -15,4 +15,7 @@ export const paths = {
   collections: '/collections',
   collectionNew: '/collections/new',
   collectionEdit: (id: string) => `/collections/${id}`,
+  contents: '/contents',
+  contentNew: '/contents/new',
+  contentEdit: (id: string) => `/contents/${id}`,
 } as const;

@@ -20,3 +20,11 @@ export type {
   CollectionPayload,
   CollectionQuestionRef,
 } from './collection';
+export type {
+  Content,
+  ContentKnowledgeRef,
+  ContentListParams,
+  ContentPayload,
+  ContentType,
+} from './content';
+export { CONTENT_TYPES } from './content';

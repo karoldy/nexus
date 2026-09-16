@@ -38,7 +38,10 @@
     "optionMin": "選擇題至少兩個選項",
     "optionText": "選項內容不能為空",
     "answerRequired": "請填寫答案",
-    "blankRequired": "請填寫所有填空"
+    "blankRequired": "請填寫所有填空",
+    "bodyRequired": "請填寫正文",
+    "fileKeyRequired": "請填寫 file key",
+    "urlRequired": "請填寫連結"
   },
   "auth": {
     "kicker": "NEXUS / AUTH",
@@ -80,6 +83,7 @@
     "knowledges": "知識",
     "questions": "題目",
     "collections": "題庫",
+    "contents": "內容",
     "categories": "分類",
     "tags": "標籤",
     "account": "帳號"
@@ -100,7 +104,8 @@
     "passwordUpdated": "密碼已更新",
     "goKnowledges": "進入知識列表",
     "goQuestions": "進入題目列表",
-    "goCollections": "進入題庫"
+    "goCollections": "進入題庫",
+    "goContents": "進入內容列表"
   },
   "knowledge": {
     "title": "知識",
@@ -180,5 +185,32 @@
     "questions": "收錄題目",
     "questionsHint": "只能收錄已發佈題目，勾選順序即排序",
     "noQuestions": "暫無可收錄的已發佈題目"
+  },
+  "content": {
+    "title": "內容",
+    "create": "新建內容",
+    "edit": "編輯內容",
+    "search": "搜尋",
+    "published": "發佈狀態",
+    "all": "全部",
+    "publishedYes": "已發佈",
+    "draft": "草稿",
+    "empty": "暫無內容",
+    "type": "形態",
+    "titleField": "標題",
+    "body": "正文",
+    "summary": "摘要",
+    "url": "連結",
+    "fileKey": "檔案 key",
+    "mimeType": "MIME",
+    "fileSize": "大小（位元組）",
+    "knowledges": "知識點",
+    "knowledgesHint": "僅已發佈內容可掛已發佈知識點",
+    "types": {
+      "NOTE": "筆記",
+      "ARTICLE": "文章",
+      "DOCUMENT": "文件",
+      "RESOURCE": "外連"
+    }
   }
 }

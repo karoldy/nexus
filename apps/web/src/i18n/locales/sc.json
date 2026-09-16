@@ -38,7 +38,10 @@
     "optionMin": "选择题至少两个选项",
     "optionText": "选项内容不能为空",
     "answerRequired": "请填写答案",
-    "blankRequired": "请填写所有填空"
+    "blankRequired": "请填写所有填空",
+    "bodyRequired": "请填写正文",
+    "fileKeyRequired": "请填写 file key",
+    "urlRequired": "请填写链接"
   },
   "auth": {
     "kicker": "NEXUS / AUTH",
@@ -80,6 +83,7 @@
     "knowledges": "知识",
     "questions": "题目",
     "collections": "题库",
+    "contents": "内容",
     "categories": "分类",
     "tags": "标签",
     "account": "账号"
@@ -100,7 +104,8 @@
     "passwordUpdated": "密码已更新",
     "goKnowledges": "进入知识列表",
     "goQuestions": "进入题目列表",
-    "goCollections": "进入题库"
+    "goCollections": "进入题库",
+    "goContents": "进入内容列表"
   },
   "knowledge": {
     "title": "知识",
@@ -180,5 +185,32 @@
     "questions": "收录题目",
     "questionsHint": "只能收录已发布题目，勾选顺序即排序",
     "noQuestions": "暂无可收录的已发布题目"
+  },
+  "content": {
+    "title": "内容",
+    "create": "新建内容",
+    "edit": "编辑内容",
+    "search": "搜索",
+    "published": "发布状态",
+    "all": "全部",
+    "publishedYes": "已发布",
+    "draft": "草稿",
+    "empty": "暂无内容",
+    "type": "形态",
+    "titleField": "标题",
+    "body": "正文",
+    "summary": "摘要",
+    "url": "链接",
+    "fileKey": "文件 key",
+    "mimeType": "MIME",
+    "fileSize": "大小（字节）",
+    "knowledges": "知识点",
+    "knowledgesHint": "仅已发布内容可挂已发布知识点",
+    "types": {
+      "NOTE": "笔记",
+      "ARTICLE": "文章",
+      "DOCUMENT": "文档",
+      "RESOURCE": "外链"
+    }
   }
 }

@@ -47,6 +47,9 @@ export function HomePage() {
           <Link className={buttonVariants()} to={paths.knowledges}>
             {t('home.goKnowledges')}
           </Link>
+          <Link className={buttonVariants({ variant: 'outline' })} to={paths.contents}>
+            {t('home.goContents')}
+          </Link>
           <Link className={buttonVariants({ variant: 'outline' })} to={paths.questions}>
             {t('home.goQuestions')}
           </Link>

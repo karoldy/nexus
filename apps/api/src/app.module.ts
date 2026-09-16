@@ -7,6 +7,7 @@ import { DatabaseModule } from './shared/database/database.module';
 import { HttpModule } from './shared/http/http.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { QuestionModule } from './question/question.module';
+import { ContentModule } from './content/content.module';
 import { RbacModule } from './rbac/rbac.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { RbacModule } from './rbac/rbac.module';
     AuthModule,
     KnowledgeModule,
     QuestionModule,
+    ContentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
